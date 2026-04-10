@@ -1,0 +1,21 @@
+fastapi>=0.115
+uvicorn>=0.34
+pydantic>=2.0
+pydantic-settings>=2.0
+python-dotenv>=1.0
+
+# LangChain & LangGraph
+langchain>=0.3
+langgraph>=0.2
+langchain-openai>=0.3
+langchain-qdrant>=0.2
+langchain-community
+langchain-mcp-adapters
+# Vector DB
+qdrant-client>=1.12
+
+# Text Processing
+tiktoken>=0.8
+
+# MCP Integration
+langchain-mcp-adapters>=0.1
