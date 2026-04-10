@@ -16,9 +16,3 @@ class ChatResponse(BaseModel):
     answer: str
     sources: list[Source] = []
     agent: str = ""
-
-
-class IngestResponse(BaseModel):
-    status: str
-    documents_processed: int
-    chunks_created: int

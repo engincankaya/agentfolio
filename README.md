@@ -57,17 +57,16 @@ Create markdown files in `data/raw/` describing your professional background (se
 ### 4. Ingest your data
 
 ```bash
-# Start the server first
-python -m src.main
+python scripts/ingest.py
 ```
 
-Then call the ingest endpoint:
+This processes all markdown files in `data/raw/`, splits them into chunks, and stores them in the local Qdrant vector database.
+
+### 5. Start the server and chat
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/ingest
+python -m src.main
 ```
-
-### 5. Chat
 
 ```bash
 curl -X POST http://localhost:8000/api/v1/chat \

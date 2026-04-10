@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from langchain_core.messages import HumanMessage
 
-from src.api.schemas import ChatRequest, ChatResponse, IngestResponse, Source
+from src.api.schemas import ChatRequest, ChatResponse, Source
 from src.core.logging import logger
 
 router = APIRouter()
@@ -58,18 +58,4 @@ async def chat(
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-
-@router.post("/ingest", response_model=IngestResponse)
-async def ingest(rag_service=Depends(get_rag_service)):
-    try:
-        result = rag_service.ingest_documents()
-        return IngestResponse(
-            status="success",
-            documents_processed=result["documents_processed"],
-            chunks_created=result["chunks_created"],
-        )
-    except Exception as e:
-        logger.error(f"Ingest error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
