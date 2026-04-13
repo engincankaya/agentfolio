@@ -6,10 +6,9 @@ from langchain_core.runnables import RunnableConfig
 from langchain_openai import ChatOpenAI
 
 from src.agents.state import GraphState
-from src.agents.chat_node import ChatNode
-from src.agents.github_agent import GitHubAgent
-from src.agents.calendar_agent import CalendarAgent
-from src.tools.portfolio_tools import handoff_to_github, handoff_to_calendar
+from src.agents.assistant import AssistantNode
+from src.agents.specialist import SpecialistNode
+from src.tools.portfolio_tools import handoff_to_specialist
 from src.core.config import settings
 from src.core.logging import logger
 
@@ -33,8 +32,7 @@ def chat_router(state: GraphState) -> str:
 def tool_router(state: GraphState) -> str:
     """
     Routes tools node output based on last executed tool.
-    - handoff_to_github → "github_agent"
-    - handoff_to_calendar → "calendar_agent"
+    - handoff_to_specialist → "specialist"
     - search_portfolio → back to calling node (current_node)
     """
     messages = state.get("messages", [])
@@ -46,21 +44,16 @@ def tool_router(state: GraphState) -> str:
         else:
             break
 
-    print('recent_tool_names',recent_tool_names)
+    if "handoff_to_specialist" in recent_tool_names:
+        return "specialist"
 
-    if "handoff_to_github" in recent_tool_names:
-        return "github_agent"
-
-    if "handoff_to_calendar" in recent_tool_names:
-        return "calendar_agent"
-
-    current = state.get("current_node", "chat_node")
+    current = state.get("current_node", "assistant")
     return current
 
 
 def agent_router(state: GraphState) -> str:
     """
-    Routes GitHubAgent/CalendarAgent output.
+    Routes Specialist output.
     - If tool call exists → "tools"
     - Otherwise → END (answer is ready)
     """
@@ -74,22 +67,21 @@ def agent_router(state: GraphState) -> str:
 # Node wrappers (set current_node in state)
 # ---------------------------------------------------------------------------
 
-def _create_chat_node_fn(chat_instance: ChatNode):
-    def chat_node_fn(state: GraphState) -> dict:
-        return chat_instance.process_message(state)
-    return chat_node_fn
+def _create_assistant_node_fn(assistant_instance: AssistantNode):
+    def assistant_node_fn(state: GraphState, config: RunnableConfig | None = None) -> dict:
+        assistant_context = None
+        if config:
+            assistant_context = config.get("configurable", {}).get("assistant_context")
+        return assistant_instance.process_message(state, assistant_context=assistant_context)
+
+    return assistant_node_fn
 
 
-def _create_github_agent_fn(github_instance: GitHubAgent):
-    async def github_agent_fn(state: GraphState, config: RunnableConfig) -> dict:
-        return await github_instance.process_message(state, config)
-    return github_agent_fn
+def _create_specialist_node_fn(specialist_instance: SpecialistNode):
+    async def specialist_node_fn(state: GraphState, config: RunnableConfig) -> dict:
+        return await specialist_instance.process_message(state, config=config)
 
-
-def _create_calendar_agent_fn(calendar_instance: CalendarAgent):
-    async def calendar_agent_fn(state: GraphState) -> dict:
-        return await calendar_instance.process_message(state)
-    return calendar_agent_fn
+    return specialist_node_fn
 
 
 def _create_tools_node(all_tools: list):
@@ -107,18 +99,17 @@ def _create_tools_node(all_tools: list):
 
 def create_portfolio_graph(
     search_tool,
-    github_tools: list | None = None,
-    calendar_tools: list | None = None,
+    specialist_tools: list | None = None,
     llm: ChatOpenAI | None = None,
     checkpointer=None,
 ) -> CompiledStateGraph:
     """
-    Builds and compiles the handoff-based multi-agent workflow.
+    Builds and compiles the assistant + specialist workflow.
 
     Graph flow:
-        START → chat_node → (chat_router) → tools / END
-        tools → (tool_router) → github_agent / calendar_agent / chat_node
-        github_agent/calendar_agent → (agent_router) → tools / END
+        START → assistant → (chat_router) → tools / END
+        tools → (tool_router) → specialist / assistant
+        specialist → (agent_router) → tools / END
     """
     if llm is None:
         llm = ChatOpenAI(
@@ -131,34 +122,27 @@ def create_portfolio_graph(
     if checkpointer is None:
         checkpointer = MemorySaver()
 
-    github_tools = github_tools or []
-    calendar_tools = calendar_tools or []
+    specialist_tools = specialist_tools or []
 
-    # Chat node tools: search + handoffs
-    chat_tools = [search_tool, handoff_to_github, handoff_to_calendar]
+    assistant_tools = [search_tool, handoff_to_specialist]
+    all_tools = assistant_tools + specialist_tools
 
-    # All tools (for the shared ToolNode)
-    all_tools = chat_tools + github_tools + calendar_tools
-
-    # Agent instances
-    chat = ChatNode(llm=llm, tools=chat_tools)
-    github = GitHubAgent(llm=llm, tools=github_tools)
-    calendar = CalendarAgent(llm=llm, tools=calendar_tools)
+    assistant = AssistantNode(llm=llm, tools=assistant_tools)
+    specialist = SpecialistNode(llm=llm, tools=specialist_tools)
 
     # Build graph
     workflow = StateGraph(GraphState)
 
-    workflow.add_node("chat_node", _create_chat_node_fn(chat))
+    workflow.add_node("assistant", _create_assistant_node_fn(assistant))
     workflow.add_node("tools", _create_tools_node(all_tools))
-    workflow.add_node("github_agent", _create_github_agent_fn(github))
-    workflow.add_node("calendar_agent", _create_calendar_agent_fn(calendar))
+    workflow.add_node("specialist", _create_specialist_node_fn(specialist))
 
     # Entry point
-    workflow.set_entry_point("chat_node")
+    workflow.set_entry_point("assistant")
 
     # Chat Node → tools or END
     workflow.add_conditional_edges(
-        "chat_node",
+        "assistant",
         chat_router,
         {"tools": "tools", END: END},
     )
@@ -168,24 +152,18 @@ def create_portfolio_graph(
         "tools",
         tool_router,
         {
-            "github_agent": "github_agent",
-            "calendar_agent": "calendar_agent",
-            "chat_node": "chat_node",
+            "specialist": "specialist",
+            "assistant": "assistant",
         },
     )
 
-    # GitHub/Calendar Agent → tools or END
+    # Specialist → tools or END
     workflow.add_conditional_edges(
-        "github_agent",
-        agent_router,
-        {"tools": "tools", END: END},
-    )
-    workflow.add_conditional_edges(
-        "calendar_agent",
+        "specialist",
         agent_router,
         {"tools": "tools", END: END},
     )
 
     graph = workflow.compile(checkpointer=checkpointer)
-    logger.info("Agenticfolio graph compiled successfully.")
+    logger.info("Assistant + specialist graph compiled successfully.")
     return graph

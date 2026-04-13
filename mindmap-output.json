@@ -1,0 +1,673 @@
+{
+  "meta": {
+    "generatedAt": "2026-04-13T02:16:57.700Z",
+    "rootPath": "",
+    "view": "default",
+    "nodeCount": 24,
+    "edgeCount": 23,
+    "toolVersions": {
+      "mcpServer": "0.1.0",
+      "treeSitter": "0.24"
+    }
+  },
+  "nodes": [
+    {
+      "id": "root",
+      "label": "Multi-agent LangGraph workflow with FastAPI REST layer, RAG pipeline (Qdrant + LangChain), and MCP tool integration. The assistant node routes user queries to either direct RAG search or a specialist agent with GitHub/calendar MCP tools.",
+      "kind": "root",
+      "type": "architecture",
+      "metadata": {
+        "pattern": "Multi-agent LangGraph workflow with FastAPI REST layer, RAG pipeline (Qdrant + LangChain), and MCP tool integration. The assistant node routes user queries to either direct RAG search or a specialist agent with GitHub/calendar MCP tools."
+      },
+      "confidence": 1
+    },
+    {
+      "id": "g-284ff9c3f9a50da0",
+      "label": "API Layer",
+      "kind": "group",
+      "type": "layer",
+      "parentId": "root",
+      "metadata": {
+        "description": "FastAPI application entry, routing, and request/response schemas",
+        "fileCount": 3,
+        "highlightFileCount": 2
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-2e5ad92c43aa96cc",
+      "label": "main.py",
+      "kind": "file",
+      "type": "Application entrypoint & lifespan orchestrator",
+      "parentId": "g-284ff9c3f9a50da0",
+      "metadata": {
+        "canonicalPath": "src/main.py",
+        "fileId": "2e5ad92c43aa96cc",
+        "language": "python",
+        "role": "Application entrypoint & lifespan orchestrator",
+        "importance": "core",
+        "isHighlighted": true,
+        "description": "FastAPI app factory with lifespan that wires MCP clients, RAG service, graph, and tools"
+      },
+      "confidence": 0.98
+    },
+    {
+      "id": "f-2b14c7a998aaa1ab",
+      "label": "routes.py",
+      "kind": "file",
+      "type": "API route handlers",
+      "parentId": "g-284ff9c3f9a50da0",
+      "metadata": {
+        "canonicalPath": "src/api/routes.py",
+        "fileId": "2b14c7a998aaa1ab",
+        "language": "python",
+        "role": "API route handlers",
+        "importance": "core",
+        "isHighlighted": true,
+        "description": "FastAPI /chat endpoint that invokes the LangGraph workflow"
+      },
+      "confidence": 0.94
+    },
+    {
+      "id": "f-802d829fd8c6f856",
+      "label": "schemas.py",
+      "kind": "file",
+      "type": "API request/response schemas",
+      "parentId": "g-284ff9c3f9a50da0",
+      "metadata": {
+        "canonicalPath": "src/api/schemas.py",
+        "fileId": "802d829fd8c6f856",
+        "language": "python",
+        "role": "API request/response schemas",
+        "importance": "supporting",
+        "isHighlighted": false
+      },
+      "confidence": 0.88
+    },
+    {
+      "id": "g-048b282d1b402c1a",
+      "label": "Agent Layer",
+      "kind": "group",
+      "type": "layer",
+      "parentId": "root",
+      "metadata": {
+        "description": "LangGraph multi-agent workflow: assistant routes to specialist via tool-based handoff",
+        "fileCount": 5,
+        "highlightFileCount": 3
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-164171855a11d162",
+      "label": "graph.py",
+      "kind": "file",
+      "type": "LangGraph workflow builder",
+      "parentId": "g-048b282d1b402c1a",
+      "metadata": {
+        "canonicalPath": "src/agents/graph.py",
+        "fileId": "164171855a11d162",
+        "language": "python",
+        "role": "LangGraph workflow builder",
+        "importance": "core",
+        "isHighlighted": true,
+        "description": "Constructs the StateGraph with assistant-tools-specialist routing"
+      },
+      "confidence": 0.97
+    },
+    {
+      "id": "f-a7b954cf052d1934",
+      "label": "assistant.py",
+      "kind": "file",
+      "type": "Primary assistant agent node",
+      "parentId": "g-048b282d1b402c1a",
+      "metadata": {
+        "canonicalPath": "src/agents/assistant.py",
+        "fileId": "a7b954cf052d1934",
+        "language": "python",
+        "role": "Primary assistant agent node",
+        "importance": "core",
+        "isHighlighted": true,
+        "description": "User-facing agent that answers portfolio questions or hands off to specialist"
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "f-0d2fa451fa03c687",
+      "label": "specialist.py",
+      "kind": "file",
+      "type": "Specialist agent node",
+      "parentId": "g-048b282d1b402c1a",
+      "metadata": {
+        "canonicalPath": "src/agents/specialist.py",
+        "fileId": "0d2fa451fa03c687",
+        "language": "python",
+        "role": "Specialist agent node",
+        "importance": "core",
+        "isHighlighted": true,
+        "description": "Technical specialist using GitHub MCP tools for repo/code queries"
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "f-326ec4e374411ef0",
+      "label": "base_agent.py",
+      "kind": "file",
+      "type": "Abstract agent base class",
+      "parentId": "g-048b282d1b402c1a",
+      "metadata": {
+        "canonicalPath": "src/agents/base_agent.py",
+        "fileId": "326ec4e374411ef0",
+        "language": "python",
+        "role": "Abstract agent base class",
+        "importance": "supporting",
+        "isHighlighted": false
+      },
+      "confidence": 0.9
+    },
+    {
+      "id": "f-eb958772b708dcf6",
+      "label": "state.py",
+      "kind": "file",
+      "type": "Graph state definition",
+      "parentId": "g-048b282d1b402c1a",
+      "metadata": {
+        "canonicalPath": "src/agents/state.py",
+        "fileId": "eb958772b708dcf6",
+        "language": "python",
+        "role": "Graph state definition",
+        "importance": "core",
+        "isHighlighted": false
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "g-489b9e08002169e2",
+      "label": "Services Layer",
+      "kind": "group",
+      "type": "layer",
+      "parentId": "root",
+      "metadata": {
+        "description": "RAG pipeline, embeddings, and portfolio catalog services",
+        "fileCount": 3,
+        "highlightFileCount": 1
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-f372288e6ce86bb3",
+      "label": "rag_service.py",
+      "kind": "file",
+      "type": "RAG service",
+      "parentId": "g-489b9e08002169e2",
+      "metadata": {
+        "canonicalPath": "src/services/rag_service.py",
+        "fileId": "f372288e6ce86bb3",
+        "language": "python",
+        "role": "RAG service",
+        "importance": "core",
+        "isHighlighted": true,
+        "description": "Document ingestion, chunking, and semantic search against Qdrant vector store"
+      },
+      "confidence": 0.96
+    },
+    {
+      "id": "f-dd2e81aa084da1e3",
+      "label": "embedding_service.py",
+      "kind": "file",
+      "type": "Embedding service",
+      "parentId": "g-489b9e08002169e2",
+      "metadata": {
+        "canonicalPath": "src/services/embedding_service.py",
+        "fileId": "dd2e81aa084da1e3",
+        "language": "python",
+        "role": "Embedding service",
+        "importance": "supporting",
+        "isHighlighted": false
+      },
+      "confidence": 0.88
+    },
+    {
+      "id": "f-725f058db66e5c13",
+      "label": "portfolio_catalog.py",
+      "kind": "file",
+      "type": "Portfolio catalog builder",
+      "parentId": "g-489b9e08002169e2",
+      "metadata": {
+        "canonicalPath": "src/services/portfolio_catalog.py",
+        "fileId": "725f058db66e5c13",
+        "language": "python",
+        "role": "Portfolio catalog builder",
+        "importance": "supporting",
+        "isHighlighted": false
+      },
+      "confidence": 0.85
+    },
+    {
+      "id": "g-ea93d6a262ecb87a",
+      "label": "Tools",
+      "kind": "group",
+      "type": "feature",
+      "parentId": "root",
+      "metadata": {
+        "description": "LangChain tool definitions for portfolio search and agent handoff",
+        "fileCount": 1,
+        "highlightFileCount": 1
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-9ae9f4dee9042360",
+      "label": "portfolio_tools.py",
+      "kind": "file",
+      "type": "LangChain tool definitions",
+      "parentId": "g-ea93d6a262ecb87a",
+      "metadata": {
+        "canonicalPath": "src/tools/portfolio_tools.py",
+        "fileId": "9ae9f4dee9042360",
+        "language": "python",
+        "role": "LangChain tool definitions",
+        "importance": "core",
+        "isHighlighted": true,
+        "description": "search_portfolio and handoff_to_specialist tool implementations"
+      },
+      "confidence": 0.93
+    },
+    {
+      "id": "g-1800f2728c25155b",
+      "label": "Core Infrastructure",
+      "kind": "group",
+      "type": "infrastructure",
+      "parentId": "root",
+      "metadata": {
+        "description": "Configuration management and logging",
+        "fileCount": 2,
+        "highlightFileCount": 1
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-2e8a8cf531fb2607",
+      "label": "config.py",
+      "kind": "file",
+      "type": "Application configuration",
+      "parentId": "g-1800f2728c25155b",
+      "metadata": {
+        "canonicalPath": "src/core/config.py",
+        "fileId": "2e8a8cf531fb2607",
+        "language": "python",
+        "role": "Application configuration",
+        "importance": "core",
+        "isHighlighted": true,
+        "description": "Pydantic Settings class loading env vars for LLM, Qdrant, MCP, etc."
+      },
+      "confidence": 0.92
+    },
+    {
+      "id": "f-87482e13901158e6",
+      "label": "logging.py",
+      "kind": "file",
+      "type": "Logging setup",
+      "parentId": "g-1800f2728c25155b",
+      "metadata": {
+        "canonicalPath": "src/core/logging.py",
+        "fileId": "87482e13901158e6",
+        "language": "python",
+        "role": "Logging setup",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.85
+    },
+    {
+      "id": "g-7fd1b96da31670f2",
+      "label": "Scripts & Testing",
+      "kind": "group",
+      "type": "other",
+      "parentId": "root",
+      "metadata": {
+        "description": "CLI scripts for data ingestion, search testing, and stream testing",
+        "fileCount": 3,
+        "highlightFileCount": 1
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-169448e9bf541331",
+      "label": "ingest.py",
+      "kind": "file",
+      "type": "Data ingestion script",
+      "parentId": "g-7fd1b96da31670f2",
+      "metadata": {
+        "canonicalPath": "scripts/ingest.py",
+        "fileId": "169448e9bf541331",
+        "language": "python",
+        "role": "Data ingestion script",
+        "importance": "supporting",
+        "isHighlighted": true,
+        "description": "CLI script to ingest markdown files into the vector store"
+      },
+      "confidence": 0.85
+    },
+    {
+      "id": "f-b9a1e52795eca140",
+      "label": "similarity_search.py",
+      "kind": "file",
+      "type": "Search testing script",
+      "parentId": "g-7fd1b96da31670f2",
+      "metadata": {
+        "canonicalPath": "scripts/similarity_search.py",
+        "fileId": "b9a1e52795eca140",
+        "language": "python",
+        "role": "Search testing script",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.8
+    },
+    {
+      "id": "f-f09b450850479b37",
+      "label": "test_stream.py",
+      "kind": "file",
+      "type": "Stream test script",
+      "parentId": "g-7fd1b96da31670f2",
+      "metadata": {
+        "canonicalPath": "test_stream.py",
+        "fileId": "f09b450850479b37",
+        "language": "python",
+        "role": "Stream test script",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.75
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-7351c154fb89b73d",
+      "source": "f-2e5ad92c43aa96cc",
+      "target": "f-ba10c3fa4b7dd578",
+      "rels": [
+        "imports"
+      ],
+      "metadata": {
+        "importedSymbols": [
+          "*"
+        ]
+      }
+    },
+    {
+      "id": "e-9d22b2cbdcb52c91",
+      "source": "f-9ae9f4dee9042360",
+      "target": "f-ba10c3fa4b7dd578",
+      "rels": [
+        "imports"
+      ],
+      "metadata": {
+        "importedSymbols": [
+          "*"
+        ]
+      }
+    },
+    {
+      "id": "e-a6993ad037b6be02",
+      "source": "f-2e8a8cf531fb2607",
+      "target": "f-4f792f802356a9b5",
+      "rels": [
+        "imports"
+      ],
+      "metadata": {
+        "importedSymbols": [
+          "*"
+        ]
+      }
+    },
+    {
+      "id": "e-ba226c3c5b8818a0",
+      "source": "f-2e5ad92c43aa96cc",
+      "target": "f-164171855a11d162",
+      "rels": [
+        "imports",
+        "orchestrates"
+      ],
+      "label": "Lifespan creates and compiles the LangGraph workflow",
+      "metadata": {
+        "annotation": "Lifespan creates and compiles the LangGraph workflow"
+      }
+    },
+    {
+      "id": "e-4f712dbb0823349f",
+      "source": "f-2e5ad92c43aa96cc",
+      "target": "f-f372288e6ce86bb3",
+      "rels": [
+        "imports",
+        "initializes"
+      ],
+      "label": "Lifespan initializes RAG service and vector store",
+      "metadata": {
+        "annotation": "Lifespan initializes RAG service and vector store"
+      }
+    },
+    {
+      "id": "e-97d72d3b3d828b85",
+      "source": "f-2e5ad92c43aa96cc",
+      "target": "f-2b14c7a998aaa1ab",
+      "rels": [
+        "imports",
+        "mounts"
+      ],
+      "label": "Mounts API router onto FastAPI app",
+      "metadata": {
+        "annotation": "Mounts API router onto FastAPI app"
+      }
+    },
+    {
+      "id": "e-9128a16321cc1d8c",
+      "source": "f-2e5ad92c43aa96cc",
+      "target": "f-9ae9f4dee9042360",
+      "rels": [
+        "imports"
+      ],
+      "label": "Builds search tool during lifespan",
+      "metadata": {
+        "annotation": "Builds search tool during lifespan"
+      }
+    },
+    {
+      "id": "e-25c46339ef7b593c",
+      "source": "f-2e5ad92c43aa96cc",
+      "target": "f-dd2e81aa084da1e3",
+      "rels": [
+        "imports",
+        "initializes"
+      ],
+      "label": "Creates embedding service for RAG",
+      "metadata": {
+        "annotation": "Creates embedding service for RAG"
+      }
+    },
+    {
+      "id": "e-f1b3763f35b80abf",
+      "source": "f-2e5ad92c43aa96cc",
+      "target": "f-725f058db66e5c13",
+      "rels": [
+        "imports"
+      ],
+      "label": "Loads private portfolio catalog at startup",
+      "metadata": {
+        "annotation": "Loads private portfolio catalog at startup"
+      }
+    },
+    {
+      "id": "e-c2195bd7adfe0fda",
+      "source": "f-164171855a11d162",
+      "target": "f-a7b954cf052d1934",
+      "rels": [
+        "imports",
+        "composes"
+      ],
+      "label": "Adds AssistantNode to the graph",
+      "metadata": {
+        "annotation": "Adds AssistantNode to the graph"
+      }
+    },
+    {
+      "id": "e-7e08c51a2dc4ff56",
+      "source": "f-164171855a11d162",
+      "target": "f-0d2fa451fa03c687",
+      "rels": [
+        "imports",
+        "composes"
+      ],
+      "label": "Adds SpecialistNode to the graph",
+      "metadata": {
+        "annotation": "Adds SpecialistNode to the graph"
+      }
+    },
+    {
+      "id": "e-ac380072e0485838",
+      "source": "f-164171855a11d162",
+      "target": "f-eb958772b708dcf6",
+      "rels": [
+        "imports"
+      ],
+      "label": "Uses GraphState as the state schema",
+      "metadata": {
+        "annotation": "Uses GraphState as the state schema"
+      }
+    },
+    {
+      "id": "e-a893f310fc0284f7",
+      "source": "f-164171855a11d162",
+      "target": "f-9ae9f4dee9042360",
+      "rels": [
+        "imports"
+      ],
+      "label": "Uses handoff_to_specialist for routing logic",
+      "metadata": {
+        "annotation": "Uses handoff_to_specialist for routing logic"
+      }
+    },
+    {
+      "id": "e-192e7cda3a70af89",
+      "source": "f-a7b954cf052d1934",
+      "target": "f-eb958772b708dcf6",
+      "rels": [
+        "imports"
+      ],
+      "label": "Reads/writes GraphState",
+      "metadata": {
+        "annotation": "Reads/writes GraphState"
+      }
+    },
+    {
+      "id": "e-e486885156754d1c",
+      "source": "f-0d2fa451fa03c687",
+      "target": "f-326ec4e374411ef0",
+      "rels": [
+        "imports",
+        "extends"
+      ],
+      "label": "SpecialistNode extends BaseAgentNode",
+      "metadata": {
+        "annotation": "SpecialistNode extends BaseAgentNode"
+      }
+    },
+    {
+      "id": "e-13c50712311dd701",
+      "source": "f-0d2fa451fa03c687",
+      "target": "f-eb958772b708dcf6",
+      "rels": [
+        "imports"
+      ],
+      "label": "Reads/writes GraphState",
+      "metadata": {
+        "annotation": "Reads/writes GraphState"
+      }
+    },
+    {
+      "id": "e-56d8dd7c976e8eeb",
+      "source": "f-326ec4e374411ef0",
+      "target": "f-eb958772b708dcf6",
+      "rels": [
+        "imports"
+      ],
+      "label": "Uses GraphState type",
+      "metadata": {
+        "annotation": "Uses GraphState type"
+      }
+    },
+    {
+      "id": "e-2318491b368b9d0c",
+      "source": "f-2b14c7a998aaa1ab",
+      "target": "f-802d829fd8c6f856",
+      "rels": [
+        "imports"
+      ],
+      "label": "Uses request/response schemas",
+      "metadata": {
+        "annotation": "Uses request/response schemas"
+      }
+    },
+    {
+      "id": "e-41a23eb048ea6d9b",
+      "source": "f-f372288e6ce86bb3",
+      "target": "f-dd2e81aa084da1e3",
+      "rels": [
+        "imports",
+        "uses"
+      ],
+      "label": "Uses EmbeddingService for vector generation",
+      "metadata": {
+        "annotation": "Uses EmbeddingService for vector generation"
+      }
+    },
+    {
+      "id": "e-7061af875e577ad2",
+      "source": "f-f372288e6ce86bb3",
+      "target": "f-725f058db66e5c13",
+      "rels": [
+        "imports"
+      ],
+      "label": "Uses parse_frontmatter for metadata extraction",
+      "metadata": {
+        "annotation": "Uses parse_frontmatter for metadata extraction"
+      }
+    },
+    {
+      "id": "e-57aa97c3925a1104",
+      "source": "f-f372288e6ce86bb3",
+      "target": "f-2e8a8cf531fb2607",
+      "rels": [
+        "imports"
+      ],
+      "label": "Reads Settings for Qdrant config",
+      "metadata": {
+        "annotation": "Reads Settings for Qdrant config"
+      }
+    },
+    {
+      "id": "e-096a0a928c091710",
+      "source": "f-9ae9f4dee9042360",
+      "target": "f-f372288e6ce86bb3",
+      "rels": [
+        "uses"
+      ],
+      "label": "search_portfolio tool delegates to RAGService at runtime",
+      "metadata": {
+        "annotation": "search_portfolio tool delegates to RAGService at runtime"
+      }
+    },
+    {
+      "id": "e-7c83afefde39bc53",
+      "source": "f-169448e9bf541331",
+      "target": "f-f372288e6ce86bb3",
+      "rels": [
+        "imports"
+      ],
+      "label": "Script triggers RAG ingestion",
+      "metadata": {
+        "annotation": "Script triggers RAG ingestion"
+      }
+    }
+  ]
+}

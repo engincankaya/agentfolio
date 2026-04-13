@@ -9,6 +9,7 @@ from qdrant_client.http.models import Distance, VectorParams
 from src.core.config import Settings, settings
 from src.core.logging import logger
 from src.services.embedding_service import EmbeddingService
+from src.services.portfolio_catalog import parse_frontmatter
 
 
 _CATEGORY_MAP: dict[str, str] = {
@@ -79,8 +80,15 @@ class RAGService:
     def _attach_metadata(self, documents: list) -> None:
         for doc in documents:
             filename = Path(doc.metadata.get("source", "")).name
+            frontmatter, body = parse_frontmatter(doc.page_content)
+            if frontmatter:
+                doc.page_content = body
             doc.metadata["filename"] = filename
             doc.metadata["category"] = self._detect_category(filename)
+            for key, value in frontmatter.items():
+                doc.metadata[key] = value
+            doc.metadata.setdefault("visibility", "private")
+            doc.metadata.setdefault("source_type", "portfolio")
 
     def _split(self, documents: list) -> list:
         splitter = RecursiveCharacterTextSplitter(

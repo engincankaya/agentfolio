@@ -19,18 +19,24 @@ def get_github_user_context(request: Request):
     return getattr(request.app.state, "github_user_context", None)
 
 
+def get_assistant_context(request: Request):
+    return getattr(request.app.state, "assistant_context", None)
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(
     body: ChatRequest,
     graph=Depends(get_graph),
     rag_service=Depends(get_rag_service),
     github_user_context=Depends(get_github_user_context),
+    assistant_context=Depends(get_assistant_context),
 ):
     try:
         config = {
             "configurable": {
                 "thread_id": body.session_id,
                 "github_user_context": github_user_context,
+                "assistant_context": assistant_context,
             }
         }
 
@@ -40,7 +46,7 @@ async def chat(
         )
 
         last_message = result["messages"][-1]
-        agent_name = result.get("current_node", "chat_node") or "chat_node"
+        agent_name = result.get("current_node", "assistant") or "assistant"
 
         raw_results = rag_service.similarity_search(body.message)
         sources = [
@@ -57,5 +63,4 @@ async def chat(
     except Exception as e:
         logger.error(f"Chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
 

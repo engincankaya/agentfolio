@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     google_oauth_client_id: str = ""
     google_oauth_client_secret: str = ""
 
+    # Mindmap MCP
+    mindmap_mcp_server_path: str = ""
+
     # LangSmith
     langsmith_api_key: str = ""
     langsmith_endpoint: str = "https://api.smith.langchain.com"

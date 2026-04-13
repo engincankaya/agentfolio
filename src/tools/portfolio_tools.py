@@ -47,21 +47,11 @@ class _HandoffInput(BaseModel):
     pass
 
 
-@tool("handoff_to_github", args_schema=_HandoffInput)
-def handoff_to_github() -> str:
+@tool("handoff_to_specialist", args_schema=_HandoffInput)
+def handoff_to_specialist() -> str:
     """
-    Transfers control to GitHub Agent for GitHub-related questions
-    (repositories, issues, pull requests, actions, commits, etc.).
+    Transfers control to the specialist for public repository, architecture,
+    and implementation-related questions.
     TRANSFERS CONTROL SILENTLY - do not generate any text before calling this.
     """
-    return json.dumps({"status": "handoff_initiated", "target": "github_agent"})
-
-
-@tool("handoff_to_calendar", args_schema=_HandoffInput)
-def handoff_to_calendar() -> str:
-    """
-    Transfers control to Calendar Agent for Google Calendar questions
-    (events, meetings, scheduling, availability, etc.).
-    TRANSFERS CONTROL SILENTLY - do not generate any text before calling this.
-    """
-    return json.dumps({"status": "handoff_initiated", "target": "calendar_agent"})
+    return json.dumps({"status": "handoff_initiated", "target": "specialist"})

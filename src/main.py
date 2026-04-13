@@ -1,3 +1,5 @@
+import ast
+import json
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,6 +11,7 @@ from src.core.config import settings
 from src.core.logging import logger
 from src.services.rag_service import RAGService
 from src.services.embedding_service import EmbeddingService
+from src.services.portfolio_catalog import load_private_portfolio_catalog
 from src.agents.graph import create_portfolio_graph
 from src.tools.portfolio_tools import build_search_tool
 
@@ -36,18 +39,134 @@ def _build_mcp_config() -> dict:
             "transport": "stdio",
         }
 
-    if settings.google_oauth_client_id and settings.google_oauth_client_secret:
-        servers["google_calendar"] = {
-            "command": "uvx",
-            "args": ["workspace-mcp", "--tools", "calendar"],
-            "env": {
-                "GOOGLE_OAUTH_CLIENT_ID": settings.google_oauth_client_id,
-                "GOOGLE_OAUTH_CLIENT_SECRET": settings.google_oauth_client_secret,
-            },
+    if settings.mindmap_mcp_server_path:
+        servers["mindmap"] = {
+            "command": "node",
+            "args": [settings.mindmap_mcp_server_path],
             "transport": "stdio",
         }
 
     return servers
+
+
+async def _build_public_repo_catalog(github_tools: list, github_user_context) -> list[dict]:
+    normalized_context = _normalize_github_user_context(github_user_context)
+    login = normalized_context.get("login", "")
+
+    search_tool = next((tool for tool in github_tools if tool.name == "search_repositories"), None)
+    if not login or not search_tool:
+        return []
+
+    supported_args = getattr(search_tool, "args", {}) or {}
+    invoke_payload = {}
+    query_value = f"user:{login} sort:updated-desc"
+    if not supported_args or "query" in supported_args:
+        invoke_payload["query"] = query_value
+    elif "q" in supported_args:
+        invoke_payload["q"] = query_value
+
+    if not supported_args or "perPage" in supported_args:
+        invoke_payload["perPage"] = 10
+    elif "per_page" in supported_args:
+        invoke_payload["per_page"] = 10
+
+    if not supported_args or "page" in supported_args:
+        invoke_payload["page"] = 1
+
+    try:
+        result = await search_tool.ainvoke(invoke_payload)
+    except Exception:
+        logger.exception("Failed to build public repo catalog from GitHub search.")
+        return []
+
+    items = []
+    if isinstance(result, dict):
+        if isinstance(result.get("items"), list):
+            items = result["items"]
+        elif isinstance(result.get("repositories"), list):
+            items = result["repositories"]
+        elif isinstance(result.get("results"), list):
+            items = result["results"]
+    elif isinstance(result, list):
+        items = result
+
+    catalog = []
+    for repo in items[:10]:
+        if not isinstance(repo, dict):
+            continue
+        catalog.append(
+            {
+                "name": repo.get("name") or repo.get("full_name") or "",
+                "description": repo.get("description") or "",
+                "language": repo.get("language") or "",
+                "updated_at": repo.get("updated_at") or repo.get("pushed_at") or "",
+            }
+        )
+
+    return catalog
+
+
+def _coerce_to_dict(value) -> dict:
+    if isinstance(value, dict):
+        return value
+    if not isinstance(value, str):
+        return {}
+
+    stripped = value.strip()
+    if not stripped:
+        return {}
+
+    for parser in (json.loads, ast.literal_eval):
+        try:
+            parsed = parser(stripped)
+        except Exception:
+            continue
+        if isinstance(parsed, dict):
+            return parsed
+
+    return {}
+
+
+def _normalize_github_user_context(raw_context) -> dict:
+    """Normalize GitHub MCP get_me output into a flat dict with a login field."""
+    if isinstance(raw_context, dict) and "login" in raw_context:
+        return raw_context
+
+    if isinstance(raw_context, list):
+        for item in raw_context:
+            if isinstance(item, dict):
+                if "login" in item:
+                    return item
+                nested = _coerce_to_dict(item.get("text"))
+                if nested.get("login"):
+                    return nested
+        return {}
+
+    if isinstance(raw_context, dict):
+        nested = _coerce_to_dict(raw_context.get("text"))
+        if nested.get("login"):
+            return nested
+
+    return _coerce_to_dict(raw_context)
+
+
+def _format_assistant_context(public_repo_catalog: list[dict], private_portfolio_catalog: list[dict]) -> str:
+    public_lines = [
+        f"- {repo['name']} | lang={repo['language'] or '?'} | updated={repo['updated_at'] or '?'} | {repo['description'] or 'No description'}"
+        for repo in public_repo_catalog
+    ] or ["- No public repository catalog available."]
+    private_lines = [
+        f"- project={entry['project_name']} | company={entry['company_name'] or '?'} | visibility={entry['visibility']} | {entry['summary']}"
+        for entry in private_portfolio_catalog
+    ] or ["- No private portfolio catalog available."]
+
+    return (
+        "Assistant routing context:\n"
+        "Public repo catalog:\n"
+        + "\n".join(public_lines)
+        + "\n\nPrivate portfolio catalog:\n"
+        + "\n".join(private_lines)
+    )
 
 
 @asynccontextmanager
@@ -58,10 +177,11 @@ async def lifespan(app: FastAPI):
     embedding_service = EmbeddingService(cfg=settings)
     rag_service = RAGService(cfg=settings, embedding_service=embedding_service)
     search_tool = build_search_tool(rag_service=rag_service)
+    private_portfolio_catalog = load_private_portfolio_catalog(settings.raw_data_path)
 
     mcp_config = _build_mcp_config()
-    github_tools = []
-    calendar_tools = []
+    specialist_tools = []
+    public_repo_catalog = []
 
     if mcp_config:
         try:
@@ -71,33 +191,53 @@ async def lifespan(app: FastAPI):
                 github_tools = await mcp_client.get_tools(server_name="github")
                 get_me_tool = next((t for t in github_tools if t.name == "get_me"), None)
                 if get_me_tool:
-                    app.state.github_user_context = await get_me_tool.ainvoke({})
+                    raw_github_user_context = await get_me_tool.ainvoke({})
+                    app.state.github_user_context = _normalize_github_user_context(raw_github_user_context)
                     github_tools = [t for t in github_tools if t.name != "get_me"]
+                    public_repo_catalog = await _build_public_repo_catalog(
+                        github_tools,
+                        app.state.github_user_context,
+                    )
                     logger.info(f"GitHub authenticated user resolved.")
+                specialist_tools.extend(github_tools)
 
-            # if "google_calendar" in mcp_config:
-            #     calendar_tools = await mcp_client.get_tools(server_name="google_calendar")
+            if "mindmap" in mcp_config:
+                logger.info("Connecting to Mindmap MCP server...")
+                all_mindmap_tools = await mcp_client.get_tools(server_name="mindmap")
+                logger.info(
+                    f"Mindmap MCP server connected — {len(all_mindmap_tools)} tools available: "
+                    f"{[t.name for t in all_mindmap_tools]}"
+                )
+                mindmap_tools = [
+                    t for t in all_mindmap_tools
+                    if t.name == "mindmap.overview"
+                ]
+                specialist_tools.extend(mindmap_tools)
+                logger.info(f"Mindmap tools filtered for specialist: {[t.name for t in mindmap_tools]}")
 
             logger.info(
-                f"MCP tools loaded — GitHub: {len(github_tools)}, Calendar: {len(calendar_tools)}"
+                f"MCP tools loaded — Specialist: {len(specialist_tools)}, Public repos: {len(public_repo_catalog)}"
             )
         except Exception:
             logger.exception("Failed to load MCP tools.")
-            github_tools = []
-            calendar_tools = []
+            specialist_tools = []
+            public_repo_catalog = []
     else:
-        logger.warning(
-            "No MCP servers configured. GitHub and Calendar agents will have no tools."
-        )
+        logger.warning("No MCP servers configured. Specialist node will have no external tools.")
+
+    assistant_context = _format_assistant_context(
+        public_repo_catalog=public_repo_catalog,
+        private_portfolio_catalog=private_portfolio_catalog,
+    )
 
     graph = create_portfolio_graph(
         search_tool=search_tool,
-        github_tools=github_tools,
-        calendar_tools=calendar_tools,
+        specialist_tools=specialist_tools,
     )
 
     app.state.rag_service = rag_service
     app.state.graph = graph
+    app.state.assistant_context = assistant_context
 
     yield
 
