@@ -1,5 +1,3 @@
-import ast
-import json
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -11,6 +9,7 @@ from src.core.config import settings
 from src.core.logging import logger
 from src.services.rag_service import RAGService
 from src.services.embedding_service import EmbeddingService
+from src.services.github_catalog import extract_repository_items, normalize_github_user_context
 from src.services.portfolio_catalog import load_private_portfolio_catalog
 from src.agents.graph import create_portfolio_graph
 from src.tools.portfolio_tools import build_search_tool
@@ -50,7 +49,7 @@ def _build_mcp_config() -> dict:
 
 
 async def _build_public_repo_catalog(github_tools: list, github_user_context) -> list[dict]:
-    normalized_context = _normalize_github_user_context(github_user_context)
+    normalized_context = normalize_github_user_context(github_user_context)
     login = normalized_context.get("login", "")
 
     search_tool = next((tool for tool in github_tools if tool.name == "search_repositories"), None)
@@ -79,24 +78,22 @@ async def _build_public_repo_catalog(github_tools: list, github_user_context) ->
         logger.exception("Failed to build public repo catalog from GitHub search.")
         return []
 
-    items = []
-    if isinstance(result, dict):
-        if isinstance(result.get("items"), list):
-            items = result["items"]
-        elif isinstance(result.get("repositories"), list):
-            items = result["repositories"]
-        elif isinstance(result.get("results"), list):
-            items = result["results"]
-    elif isinstance(result, list):
-        items = result
+    items = extract_repository_items(result)
 
     catalog = []
     for repo in items[:10]:
         if not isinstance(repo, dict):
             continue
+        owner = ""
+        if isinstance(repo.get("owner"), dict):
+            owner = repo["owner"].get("login") or repo["owner"].get("name") or ""
+        full_name = repo.get("full_name") or ""
+        if not full_name and owner and repo.get("name"):
+            full_name = f"{owner}/{repo['name']}"
         catalog.append(
             {
                 "name": repo.get("name") or repo.get("full_name") or "",
+                "full_name": full_name,
                 "description": repo.get("description") or "",
                 "language": repo.get("language") or "",
                 "updated_at": repo.get("updated_at") or repo.get("pushed_at") or "",
@@ -106,53 +103,9 @@ async def _build_public_repo_catalog(github_tools: list, github_user_context) ->
     return catalog
 
 
-def _coerce_to_dict(value) -> dict:
-    if isinstance(value, dict):
-        return value
-    if not isinstance(value, str):
-        return {}
-
-    stripped = value.strip()
-    if not stripped:
-        return {}
-
-    for parser in (json.loads, ast.literal_eval):
-        try:
-            parsed = parser(stripped)
-        except Exception:
-            continue
-        if isinstance(parsed, dict):
-            return parsed
-
-    return {}
-
-
-def _normalize_github_user_context(raw_context) -> dict:
-    """Normalize GitHub MCP get_me output into a flat dict with a login field."""
-    if isinstance(raw_context, dict) and "login" in raw_context:
-        return raw_context
-
-    if isinstance(raw_context, list):
-        for item in raw_context:
-            if isinstance(item, dict):
-                if "login" in item:
-                    return item
-                nested = _coerce_to_dict(item.get("text"))
-                if nested.get("login"):
-                    return nested
-        return {}
-
-    if isinstance(raw_context, dict):
-        nested = _coerce_to_dict(raw_context.get("text"))
-        if nested.get("login"):
-            return nested
-
-    return _coerce_to_dict(raw_context)
-
-
 def _format_assistant_context(public_repo_catalog: list[dict], private_portfolio_catalog: list[dict]) -> str:
     public_lines = [
-        f"- {repo['name']} | lang={repo['language'] or '?'} | updated={repo['updated_at'] or '?'} | {repo['description'] or 'No description'}"
+        f"- {repo['full_name'] or repo['name']} | lang={repo['language'] or '?'} | updated={repo['updated_at'] or '?'} | {repo['description'] or 'No description'}"
         for repo in public_repo_catalog
     ] or ["- No public repository catalog available."]
     private_lines = [
@@ -166,6 +119,19 @@ def _format_assistant_context(public_repo_catalog: list[dict], private_portfolio
         + "\n".join(public_lines)
         + "\n\nPrivate portfolio catalog:\n"
         + "\n".join(private_lines)
+    )
+
+
+def _format_specialist_context(public_repo_catalog: list[dict]) -> str:
+    public_lines = [
+        f"- {repo['full_name'] or repo['name']} | lang={repo['language'] or '?'} | updated={repo['updated_at'] or '?'} | {repo['description'] or 'No description'}"
+        for repo in public_repo_catalog
+    ] or ["- No public repository catalog available."]
+
+    return (
+        "Specialist repository context:\n"
+        "Prefer these repositories as candidates when the conversation implies a public repo:\n"
+        + "\n".join(public_lines)
     )
 
 
@@ -192,7 +158,7 @@ async def lifespan(app: FastAPI):
                 get_me_tool = next((t for t in github_tools if t.name == "get_me"), None)
                 if get_me_tool:
                     raw_github_user_context = await get_me_tool.ainvoke({})
-                    app.state.github_user_context = _normalize_github_user_context(raw_github_user_context)
+                    app.state.github_user_context = normalize_github_user_context(raw_github_user_context)
                     github_tools = [t for t in github_tools if t.name != "get_me"]
                     public_repo_catalog = await _build_public_repo_catalog(
                         github_tools,
@@ -229,6 +195,7 @@ async def lifespan(app: FastAPI):
         public_repo_catalog=public_repo_catalog,
         private_portfolio_catalog=private_portfolio_catalog,
     )
+    specialist_context = _format_specialist_context(public_repo_catalog=public_repo_catalog)
 
     graph = create_portfolio_graph(
         search_tool=search_tool,
@@ -238,6 +205,7 @@ async def lifespan(app: FastAPI):
     app.state.rag_service = rag_service
     app.state.graph = graph
     app.state.assistant_context = assistant_context
+    app.state.specialist_context = specialist_context
 
     yield
 
