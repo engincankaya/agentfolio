@@ -9,6 +9,8 @@ class GraphState(TypedDict):
     LangGraph State for the assistant + specialist workflow.
     - messages: Accumulated conversation history
     - current_node: Tracks which node is active (used by tool_router for return routing)
+    - response: Final structured answer and suggestion payload
     """
     messages: Annotated[List[BaseMessage], operator.add]
     current_node: Optional[str]
+    response: Optional[dict]

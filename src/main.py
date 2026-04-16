@@ -28,9 +28,7 @@ def _build_mcp_config() -> dict:
                 "ghcr.io/github/github-mcp-server",
                 "stdio",
                 "--tools",
-                "get_me,search_repositories,get_file_contents,list_commits,"
-                "list_branches,list_tags,list_releases,get_latest_release,"
-                "get_commit,get_tag,get_release_by_tag,search_code",
+                "get_me,get_file_contents,search_repositories"
             ],
             "env": {
                 "GITHUB_PERSONAL_ACCESS_TOKEN": settings.github_pat,
@@ -176,7 +174,7 @@ async def lifespan(app: FastAPI):
                 )
                 mindmap_tools = [
                     t for t in all_mindmap_tools
-                    if t.name == "mindmap.overview"
+                    if t.name == "mindmap.overview" or "mindmap.find"
                 ]
                 specialist_tools.extend(mindmap_tools)
                 logger.info(f"Mindmap tools filtered for specialist: {[t.name for t in mindmap_tools]}")
@@ -221,7 +219,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust this in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

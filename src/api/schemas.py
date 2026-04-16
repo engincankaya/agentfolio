@@ -14,5 +14,6 @@ class Source(BaseModel):
 
 class ChatResponse(BaseModel):
     answer: str
-    sources: list[Source] = []
+    suggestions: list[str] = Field(default_factory=list)
+    sources: list[Source] = Field(default_factory=list)
     agent: str = ""

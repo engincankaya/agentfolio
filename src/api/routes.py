@@ -53,18 +53,22 @@ async def chat(
 
         last_message = result["messages"][-1]
         agent_name = result.get("current_node", "assistant") or "assistant"
+        response_payload = result.get("response") or {}
 
-        raw_results = rag_service.similarity_search(body.message)
-        sources = [
-            Source(
-                file=doc.metadata.get("filename", ""),
-                category=doc.metadata.get("category", ""),
-                snippet=doc.page_content[:200],
-            )
-            for doc, _ in raw_results
-        ]
+        answer = response_payload.get("answer")
+        if not isinstance(answer, str) or not answer.strip():
+            answer = last_message.content if isinstance(last_message.content, str) else ""
 
-        return ChatResponse(answer=last_message.content, sources=sources, agent=agent_name)
+        suggestions = response_payload.get("suggestions", [])
+        if not isinstance(suggestions, list):
+            suggestions = []
+        suggestions = [item.strip() for item in suggestions if isinstance(item, str) and item.strip()][:3]
+
+        return ChatResponse(
+            answer=answer,
+            suggestions=suggestions,
+            agent=agent_name,
+        )
 
     except Exception as e:
         logger.error(f"Chat error: {e}")

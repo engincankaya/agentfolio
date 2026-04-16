@@ -68,11 +68,14 @@ def agent_router(state: GraphState) -> str:
 # ---------------------------------------------------------------------------
 
 def _create_assistant_node_fn(assistant_instance: AssistantNode):
-    def assistant_node_fn(state: GraphState, config: RunnableConfig | None = None) -> dict:
+    async def assistant_node_fn(state: GraphState, config: RunnableConfig | None = None) -> dict:
         assistant_context = None
         if config:
             assistant_context = config.get("configurable", {}).get("assistant_context")
-        return assistant_instance.process_message(state, assistant_context=assistant_context)
+        return await assistant_instance.process_message(
+            state,
+            assistant_context=assistant_context,
+        )
 
     return assistant_node_fn
 
