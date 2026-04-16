@@ -163,7 +163,11 @@ async def lifespan(app: FastAPI):
                         app.state.github_user_context,
                     )
                     logger.info(f"GitHub authenticated user resolved.")
-                specialist_tools.extend(github_tools)
+                get_file_contents_tool = next(
+                    (t for t in github_tools if t.name == "get_file_contents"), None
+                )
+                if get_file_contents_tool:
+                    specialist_tools.append(get_file_contents_tool)
 
             if "mindmap" in mcp_config:
                 logger.info("Connecting to Mindmap MCP server...")
@@ -174,7 +178,7 @@ async def lifespan(app: FastAPI):
                 )
                 mindmap_tools = [
                     t for t in all_mindmap_tools
-                    if t.name == "mindmap.overview" or "mindmap.find"
+                    if t.name in ("mindmap.overview", "mindmap.find")
                 ]
                 specialist_tools.extend(mindmap_tools)
                 logger.info(f"Mindmap tools filtered for specialist: {[t.name for t in mindmap_tools]}")
