@@ -151,6 +151,8 @@ All configuration is done through environment variables. Copy `.env.example` to 
 | `LLM_MODEL` | No | LLM model to use (default: `google/gemini-3.1-flash-lite-preview`) |
 | `EMBEDDING_MODEL` | No | Embedding model (default: `openai/text-embedding-3-small`) |
 | `GITHUB_PAT` | Yes | GitHub Personal Access Token for MCP server |
+| `MINDMAP_MCP_PACKAGE` | No | NPM package name for Mindmap MCP server, run with `npx -y <package>` |
+| `MINDMAP_MCP_SERVER_PATH` | No | Local path to Mindmap MCP server `dist/index.js`, used only when `MINDMAP_MCP_PACKAGE` is empty |
 | `GOOGLE_OAUTH_CLIENT_ID` | No | Google OAuth client ID for Calendar agent |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | No | Google OAuth client secret for Calendar agent |
 | `QDRANT_URL` | No | Qdrant Cloud cluster URL. When set, remote Qdrant is used instead of local storage. |

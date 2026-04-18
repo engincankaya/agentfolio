@@ -36,7 +36,13 @@ def _build_mcp_config() -> dict:
             "transport": "stdio",
         }
 
-    if settings.mindmap_mcp_server_path:
+    if settings.mindmap_mcp_package:
+        servers["mindmap"] = {
+            "command": "npx",
+            "args": ["-y", settings.mindmap_mcp_package],
+            "transport": "stdio",
+        }
+    elif settings.mindmap_mcp_server_path:
         servers["mindmap"] = {
             "command": "node",
             "args": [settings.mindmap_mcp_server_path],

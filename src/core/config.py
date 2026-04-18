@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     google_oauth_client_secret: str = ""
 
     # Mindmap MCP
+    mindmap_mcp_package: str = ""
     mindmap_mcp_server_path: str = ""
 
     # LangSmith
