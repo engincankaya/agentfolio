@@ -1,10 +1,10 @@
 {
   "meta": {
-    "generatedAt": "2026-04-13T02:16:57.700Z",
+    "generatedAt": "2026-04-18T13:01:28.567Z",
     "rootPath": "",
-    "view": "default",
-    "nodeCount": 24,
-    "edgeCount": 23,
+    "view": "layered",
+    "nodeCount": 55,
+    "edgeCount": 35,
     "toolVersions": {
       "mcpServer": "0.1.0",
       "treeSitter": "0.24"
@@ -13,86 +13,23 @@
   "nodes": [
     {
       "id": "root",
-      "label": "Multi-agent LangGraph workflow with FastAPI REST layer, RAG pipeline (Qdrant + LangChain), and MCP tool integration. The assistant node routes user queries to either direct RAG search or a specialist agent with GitHub/calendar MCP tools.",
+      "label": "Multi-Agent RAG Pipeline with LangGraph Orchestration — A FastAPI backend that uses a LangGraph state machine to route user questions between an Assistant (private portfolio via RAG) and a Specialist (public GitHub repos via MCP tools). The system ingests markdown portfolio files into a Qdrant vector store, connects to GitHub and Mindmap MCP servers for live data, and exposes both synchronous and streaming chat endpoints.",
       "kind": "root",
       "type": "architecture",
       "metadata": {
-        "pattern": "Multi-agent LangGraph workflow with FastAPI REST layer, RAG pipeline (Qdrant + LangChain), and MCP tool integration. The assistant node routes user queries to either direct RAG search or a specialist agent with GitHub/calendar MCP tools."
+        "pattern": "Multi-Agent RAG Pipeline with LangGraph Orchestration — A FastAPI backend that uses a LangGraph state machine to route user questions between an Assistant (private portfolio via RAG) and a Specialist (public GitHub repos via MCP tools). The system ingests markdown portfolio files into a Qdrant vector store, connects to GitHub and Mindmap MCP servers for live data, and exposes both synchronous and streaming chat endpoints."
       },
       "confidence": 1
     },
     {
-      "id": "g-284ff9c3f9a50da0",
-      "label": "API Layer",
+      "id": "g-99f96509c4fece4a",
+      "label": "Multi-Agent Orchestration",
       "kind": "group",
       "type": "layer",
       "parentId": "root",
       "metadata": {
-        "description": "FastAPI application entry, routing, and request/response schemas",
-        "fileCount": 3,
-        "highlightFileCount": 2
-      },
-      "confidence": 1
-    },
-    {
-      "id": "f-2e5ad92c43aa96cc",
-      "label": "main.py",
-      "kind": "file",
-      "type": "Application entrypoint & lifespan orchestrator",
-      "parentId": "g-284ff9c3f9a50da0",
-      "metadata": {
-        "canonicalPath": "src/main.py",
-        "fileId": "2e5ad92c43aa96cc",
-        "language": "python",
-        "role": "Application entrypoint & lifespan orchestrator",
-        "importance": "core",
-        "isHighlighted": true,
-        "description": "FastAPI app factory with lifespan that wires MCP clients, RAG service, graph, and tools"
-      },
-      "confidence": 0.98
-    },
-    {
-      "id": "f-2b14c7a998aaa1ab",
-      "label": "routes.py",
-      "kind": "file",
-      "type": "API route handlers",
-      "parentId": "g-284ff9c3f9a50da0",
-      "metadata": {
-        "canonicalPath": "src/api/routes.py",
-        "fileId": "2b14c7a998aaa1ab",
-        "language": "python",
-        "role": "API route handlers",
-        "importance": "core",
-        "isHighlighted": true,
-        "description": "FastAPI /chat endpoint that invokes the LangGraph workflow"
-      },
-      "confidence": 0.94
-    },
-    {
-      "id": "f-802d829fd8c6f856",
-      "label": "schemas.py",
-      "kind": "file",
-      "type": "API request/response schemas",
-      "parentId": "g-284ff9c3f9a50da0",
-      "metadata": {
-        "canonicalPath": "src/api/schemas.py",
-        "fileId": "802d829fd8c6f856",
-        "language": "python",
-        "role": "API request/response schemas",
-        "importance": "supporting",
-        "isHighlighted": false
-      },
-      "confidence": 0.88
-    },
-    {
-      "id": "g-048b282d1b402c1a",
-      "label": "Agent Layer",
-      "kind": "group",
-      "type": "layer",
-      "parentId": "root",
-      "metadata": {
-        "description": "LangGraph multi-agent workflow: assistant routes to specialist via tool-based handoff",
-        "fileCount": 5,
+        "description": "The core agent system built on LangGraph. A StateGraph routes user queries through an Assistant node (for private portfolio data via RAG) and a Specialist node (for public GitHub repo analysis via MCP). The graph uses conditional edges with three routers (chat_router, tool_router, agent_router) to implement a handoff workflow between agents. BaseAgentNode provides shared LLM invocation with structured output (ChatTurnOutput). GraphState tracks messages, active node, and final response across the workflow.",
+        "fileCount": 7,
         "highlightFileCount": 3
       },
       "confidence": 1
@@ -101,95 +38,206 @@
       "id": "f-164171855a11d162",
       "label": "graph.py",
       "kind": "file",
-      "type": "LangGraph workflow builder",
-      "parentId": "g-048b282d1b402c1a",
+      "type": "LangGraph workflow builder and router logic",
+      "parentId": "g-99f96509c4fece4a",
       "metadata": {
         "canonicalPath": "src/agents/graph.py",
         "fileId": "164171855a11d162",
         "language": "python",
-        "role": "LangGraph workflow builder",
+        "role": "LangGraph workflow builder and router logic",
         "importance": "core",
         "isHighlighted": true,
-        "description": "Constructs the StateGraph with assistant-tools-specialist routing"
+        "description": "Defines the multi-agent state graph using LangGraph's StateGraph API. Contains three router functions (chat_router, tool_router, agent_router) that implement the conditional branching logic: Assistant → Tools → Specialist → Tools → END. The create_portfolio_graph factory function assembles nodes, edges, and a MemorySaver checkpointer into a compiled graph. This is the core orchestration engine of the entire agent system."
       },
-      "confidence": 0.97
+      "confidence": 1
     },
     {
       "id": "f-a7b954cf052d1934",
       "label": "assistant.py",
       "kind": "file",
-      "type": "Primary assistant agent node",
-      "parentId": "g-048b282d1b402c1a",
+      "type": "Primary user-facing assistant agent node",
+      "parentId": "g-99f96509c4fece4a",
       "metadata": {
         "canonicalPath": "src/agents/assistant.py",
         "fileId": "a7b954cf052d1934",
         "language": "python",
-        "role": "Primary assistant agent node",
+        "role": "Primary user-facing assistant agent node",
         "importance": "core",
         "isHighlighted": true,
-        "description": "User-facing agent that answers portfolio questions or hands off to specialist"
+        "description": "Implements the AssistantNode that extends BaseAgentNode. Defines ASSISTANT_INSTRUCTIONS — a detailed system prompt with routing rules that determine when to use search_portfolio (private data) vs. handoff_to_specialist (public GitHub repos). The assistant acts as the entry point for all user conversations, routing queries based on private_portfolio_catalog and public_repo_catalog context injected at runtime."
       },
-      "confidence": 0.95
+      "confidence": 1
     },
     {
       "id": "f-0d2fa451fa03c687",
       "label": "specialist.py",
       "kind": "file",
-      "type": "Specialist agent node",
-      "parentId": "g-048b282d1b402c1a",
+      "type": "Technical specialist agent node for GitHub deep-dives",
+      "parentId": "g-99f96509c4fece4a",
       "metadata": {
         "canonicalPath": "src/agents/specialist.py",
         "fileId": "0d2fa451fa03c687",
         "language": "python",
-        "role": "Specialist agent node",
+        "role": "Technical specialist agent node for GitHub deep-dives",
         "importance": "core",
         "isHighlighted": true,
-        "description": "Technical specialist using GitHub MCP tools for repo/code queries"
+        "description": "Implements the SpecialistNode that extends BaseAgentNode. Defines SPECIALIST_INSTRUCTIONS — a comprehensive system prompt with a hierarchical discovery strategy (mindmap.overview → mindmap.find → get_file_contents). Receives GitHub user context and repository catalog at runtime. Handles architecture questions, code analysis, and technical deep-dives into public repositories using MCP-provided tools."
       },
-      "confidence": 0.95
+      "confidence": 1
     },
     {
       "id": "f-326ec4e374411ef0",
       "label": "base_agent.py",
       "kind": "file",
-      "type": "Abstract agent base class",
-      "parentId": "g-048b282d1b402c1a",
+      "type": "Abstract base class for agent nodes",
+      "parentId": "g-99f96509c4fece4a",
       "metadata": {
         "canonicalPath": "src/agents/base_agent.py",
         "fileId": "326ec4e374411ef0",
         "language": "python",
-        "role": "Abstract agent base class",
+        "role": "Abstract base class for agent nodes",
+        "importance": "core",
+        "isHighlighted": false
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-eb958772b708dcf6",
+      "label": "state.py",
+      "kind": "file",
+      "type": "LangGraph state schema definition",
+      "parentId": "g-99f96509c4fece4a",
+      "metadata": {
+        "canonicalPath": "src/agents/state.py",
+        "fileId": "eb958772b708dcf6",
+        "language": "python",
+        "role": "LangGraph state schema definition",
+        "importance": "core",
+        "isHighlighted": false
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-26f569f80cded0b5",
+      "label": "output_schema.py",
+      "kind": "file",
+      "type": "Pydantic schema for structured LLM output",
+      "parentId": "g-99f96509c4fece4a",
+      "metadata": {
+        "canonicalPath": "src/agents/output_schema.py",
+        "fileId": "26f569f80cded0b5",
+        "language": "python",
+        "role": "Pydantic schema for structured LLM output",
+        "importance": "supporting",
+        "isHighlighted": false
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "f-ccd33f67ad98acd2",
+      "label": "__init__.py",
+      "kind": "file",
+      "type": "Agents package init",
+      "parentId": "g-99f96509c4fece4a",
+      "metadata": {
+        "canonicalPath": "src/agents/__init__.py",
+        "fileId": "ccd33f67ad98acd2",
+        "language": "python",
+        "role": "Agents package init",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.5
+    },
+    {
+      "id": "g-aa4dfda076e8b856",
+      "label": "FastAPI Web Layer",
+      "kind": "group",
+      "type": "layer",
+      "parentId": "root",
+      "metadata": {
+        "description": "The HTTP interface layer exposing the agent system as a REST API. Provides a synchronous /chat endpoint returning full JSON responses and a /chat/stream endpoint returning NDJSON events for real-time token streaming. Uses FastAPI dependency injection to resolve services from app.state. AnswerStreamExtractor implements a character-level JSON parser for extracting answer deltas from streamed LLM output.",
+        "fileCount": 4,
+        "highlightFileCount": 2
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-2b14c7a998aaa1ab",
+      "label": "routes.py",
+      "kind": "file",
+      "type": "FastAPI route handlers for chat endpoints",
+      "parentId": "g-aa4dfda076e8b856",
+      "metadata": {
+        "canonicalPath": "src/api/routes.py",
+        "fileId": "2b14c7a998aaa1ab",
+        "language": "python",
+        "role": "FastAPI route handlers for chat endpoints",
+        "importance": "core",
+        "isHighlighted": true,
+        "description": "Defines the /chat and /chat/stream endpoints. Uses FastAPI dependency injection to resolve graph, RAG service, and context from app.state. The synchronous chat endpoint invokes the graph and returns a ChatResponse. The streaming endpoint uses astream with NDJSON events, extracting answer deltas via AnswerStreamExtractor."
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-643b7835b916d216",
+      "label": "streaming.py",
+      "kind": "file",
+      "type": "Streaming utilities for NDJSON chat responses",
+      "parentId": "g-aa4dfda076e8b856",
+      "metadata": {
+        "canonicalPath": "src/api/streaming.py",
+        "fileId": "643b7835b916d216",
+        "language": "python",
+        "role": "Streaming utilities for NDJSON chat responses",
+        "importance": "supporting",
+        "isHighlighted": true,
+        "description": "Implements AnswerStreamExtractor — a character-level JSON parser that extracts the 'answer' field value from streamed LLM output chunks in real-time. Also provides normalize_stream_content, ndjson_event, and normalize_suggestions helpers."
+      },
+      "confidence": 0.95
+    },
+    {
+      "id": "f-802d829fd8c6f856",
+      "label": "schemas.py",
+      "kind": "file",
+      "type": "Pydantic request/response models for the API",
+      "parentId": "g-aa4dfda076e8b856",
+      "metadata": {
+        "canonicalPath": "src/api/schemas.py",
+        "fileId": "802d829fd8c6f856",
+        "language": "python",
+        "role": "Pydantic request/response models for the API",
         "importance": "supporting",
         "isHighlighted": false
       },
       "confidence": 0.9
     },
     {
-      "id": "f-eb958772b708dcf6",
-      "label": "state.py",
+      "id": "f-52786a72fe30975b",
+      "label": "__init__.py",
       "kind": "file",
-      "type": "Graph state definition",
-      "parentId": "g-048b282d1b402c1a",
+      "type": "API package init",
+      "parentId": "g-aa4dfda076e8b856",
       "metadata": {
-        "canonicalPath": "src/agents/state.py",
-        "fileId": "eb958772b708dcf6",
+        "canonicalPath": "src/api/__init__.py",
+        "fileId": "52786a72fe30975b",
         "language": "python",
-        "role": "Graph state definition",
-        "importance": "core",
+        "role": "API package init",
+        "importance": "peripheral",
         "isHighlighted": false
       },
-      "confidence": 0.95
+      "confidence": 0.5
     },
     {
-      "id": "g-489b9e08002169e2",
-      "label": "Services Layer",
+      "id": "g-784cff7e8fcc77f9",
+      "label": "RAG Pipeline & Vector Store",
       "kind": "group",
-      "type": "layer",
+      "type": "feature",
       "parentId": "root",
       "metadata": {
-        "description": "RAG pipeline, embeddings, and portfolio catalog services",
-        "fileCount": 3,
-        "highlightFileCount": 1
+        "description": "Retrieval-Augmented Generation pipeline that ingests markdown portfolio files, splits them into chunks with metadata (category, visibility, frontmatter), and indexes them into a local Qdrant vector store. The search_portfolio LangChain tool wraps RAGService.similarity_search, enabling the Assistant agent to retrieve relevant career and project information. EmbeddingService manages a singleton OpenAI embedding model. The handoff_to_specialist tool acts as a routing signal in the graph.",
+        "fileCount": 6,
+        "highlightFileCount": 2
       },
       "confidence": 1
     },
@@ -197,91 +245,157 @@
       "id": "f-f372288e6ce86bb3",
       "label": "rag_service.py",
       "kind": "file",
-      "type": "RAG service",
-      "parentId": "g-489b9e08002169e2",
+      "type": "RAG pipeline — document ingestion and semantic search",
+      "parentId": "g-784cff7e8fcc77f9",
       "metadata": {
         "canonicalPath": "src/services/rag_service.py",
         "fileId": "f372288e6ce86bb3",
         "language": "python",
-        "role": "RAG service",
+        "role": "RAG pipeline — document ingestion and semantic search",
         "importance": "core",
         "isHighlighted": true,
-        "description": "Document ingestion, chunking, and semantic search against Qdrant vector store"
+        "description": "Implements RAGService — the core retrieval-augmented generation pipeline. Loads markdown files, attaches metadata, splits with RecursiveCharacterTextSplitter, indexes into local Qdrant, and provides similarity_search. This is the knowledge retrieval backbone for the Assistant agent."
       },
-      "confidence": 0.96
+      "confidence": 1
     },
     {
       "id": "f-dd2e81aa084da1e3",
       "label": "embedding_service.py",
       "kind": "file",
-      "type": "Embedding service",
-      "parentId": "g-489b9e08002169e2",
+      "type": "Singleton embedding model manager",
+      "parentId": "g-784cff7e8fcc77f9",
       "metadata": {
         "canonicalPath": "src/services/embedding_service.py",
         "fileId": "dd2e81aa084da1e3",
         "language": "python",
-        "role": "Embedding service",
+        "role": "Singleton embedding model manager",
         "importance": "supporting",
         "isHighlighted": false
       },
-      "confidence": 0.88
+      "confidence": 0.9
+    },
+    {
+      "id": "f-9ae9f4dee9042360",
+      "label": "portfolio_tools.py",
+      "kind": "file",
+      "type": "LangChain tool definitions for agent workflow",
+      "parentId": "g-784cff7e8fcc77f9",
+      "metadata": {
+        "canonicalPath": "src/tools/portfolio_tools.py",
+        "fileId": "9ae9f4dee9042360",
+        "language": "python",
+        "role": "LangChain tool definitions for agent workflow",
+        "importance": "core",
+        "isHighlighted": true,
+        "description": "Defines search_portfolio (wraps RAGService.similarity_search) and handoff_to_specialist (routing signal tool). These are the primary tools available to the Assistant node in the graph."
+      },
+      "confidence": 1
     },
     {
       "id": "f-725f058db66e5c13",
       "label": "portfolio_catalog.py",
       "kind": "file",
-      "type": "Portfolio catalog builder",
-      "parentId": "g-489b9e08002169e2",
+      "type": "Private portfolio catalog builder from markdown files",
+      "parentId": "g-784cff7e8fcc77f9",
       "metadata": {
         "canonicalPath": "src/services/portfolio_catalog.py",
         "fileId": "725f058db66e5c13",
         "language": "python",
-        "role": "Portfolio catalog builder",
+        "role": "Private portfolio catalog builder from markdown files",
         "importance": "supporting",
         "isHighlighted": false
       },
-      "confidence": 0.85
+      "confidence": 0.95
     },
     {
-      "id": "g-ea93d6a262ecb87a",
-      "label": "Tools",
+      "id": "f-c8780f2759cb13f6",
+      "label": "__init__.py",
+      "kind": "file",
+      "type": "Services package init",
+      "parentId": "g-784cff7e8fcc77f9",
+      "metadata": {
+        "canonicalPath": "src/services/__init__.py",
+        "fileId": "c8780f2759cb13f6",
+        "language": "python",
+        "role": "Services package init",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.5
+    },
+    {
+      "id": "f-e230ea7fdb8acd61",
+      "label": "__init__.py",
+      "kind": "file",
+      "type": "Tools package init",
+      "parentId": "g-784cff7e8fcc77f9",
+      "metadata": {
+        "canonicalPath": "src/tools/__init__.py",
+        "fileId": "e230ea7fdb8acd61",
+        "language": "python",
+        "role": "Tools package init",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.5
+    },
+    {
+      "id": "g-5b9f9181313bd7c9",
+      "label": "External Integrations (MCP)",
       "kind": "group",
       "type": "feature",
       "parentId": "root",
       "metadata": {
-        "description": "LangChain tool definitions for portfolio search and agent handoff",
+        "description": "Integration with external services through the Model Context Protocol (MCP). Connects to GitHub MCP server (via Docker, stdio transport) for repository search, file reading, and user identity; and to a Mindmap MCP server for architecture-aware project analysis. The github_catalog service normalizes diverse MCP output formats into clean data structures. MCP tools are injected into the Specialist node at startup.",
         "fileCount": 1,
         "highlightFileCount": 1
       },
       "confidence": 1
     },
     {
-      "id": "f-9ae9f4dee9042360",
-      "label": "portfolio_tools.py",
+      "id": "f-6bd8531d6b6599e9",
+      "label": "github_catalog.py",
       "kind": "file",
-      "type": "LangChain tool definitions",
-      "parentId": "g-ea93d6a262ecb87a",
+      "type": "GitHub MCP output normalizer and catalog builder",
+      "parentId": "g-5b9f9181313bd7c9",
       "metadata": {
-        "canonicalPath": "src/tools/portfolio_tools.py",
-        "fileId": "9ae9f4dee9042360",
+        "canonicalPath": "src/services/github_catalog.py",
+        "fileId": "6bd8531d6b6599e9",
         "language": "python",
-        "role": "LangChain tool definitions",
-        "importance": "core",
+        "role": "GitHub MCP output normalizer and catalog builder",
+        "importance": "supporting",
         "isHighlighted": true,
-        "description": "search_portfolio and handoff_to_specialist tool implementations"
+        "description": "Utility functions to normalize raw MCP tool output from GitHub. Handles diverse response formats via recursive parsing to produce clean repository dicts."
       },
-      "confidence": 0.93
+      "confidence": 0.95
     },
     {
-      "id": "g-1800f2728c25155b",
-      "label": "Core Infrastructure",
+      "id": "g-598f3a114e53205e",
+      "label": "Application Bootstrap & Configuration",
       "kind": "group",
       "type": "infrastructure",
       "parentId": "root",
       "metadata": {
-        "description": "Configuration management and logging",
-        "fileCount": 2,
-        "highlightFileCount": 1
+        "description": "The application startup and configuration layer. src/main.py orchestrates the full initialization sequence: loads settings from .env via pydantic-settings, initializes embedding and RAG services, connects to MCP servers, builds public/private catalogs, assembles the agent graph, and mounts the FastAPI app with CORS. Settings centralizes all environment configuration (API keys, model names, Qdrant paths, LangSmith tracing).",
+        "fileCount": 6,
+        "highlightFileCount": 2
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-2e5ad92c43aa96cc",
+      "label": "main.py",
+      "kind": "file",
+      "type": "Application entry point and service orchestrator",
+      "parentId": "g-598f3a114e53205e",
+      "metadata": {
+        "canonicalPath": "src/main.py",
+        "fileId": "2e5ad92c43aa96cc",
+        "language": "python",
+        "role": "Application entry point and service orchestrator",
+        "importance": "core",
+        "isHighlighted": true,
+        "description": "FastAPI application factory with lifespan management. Initializes all shared services (RAG, embeddings, MCP clients), builds the agent graph, formats routing context for assistant and specialist nodes, and wires up CORS middleware and API routes. This is the central bootstrapping module that connects every layer of the system."
       },
       "confidence": 1
     },
@@ -289,43 +403,91 @@
       "id": "f-2e8a8cf531fb2607",
       "label": "config.py",
       "kind": "file",
-      "type": "Application configuration",
-      "parentId": "g-1800f2728c25155b",
+      "type": "Application configuration via pydantic-settings",
+      "parentId": "g-598f3a114e53205e",
       "metadata": {
         "canonicalPath": "src/core/config.py",
         "fileId": "2e8a8cf531fb2607",
         "language": "python",
-        "role": "Application configuration",
+        "role": "Application configuration via pydantic-settings",
         "importance": "core",
         "isHighlighted": true,
-        "description": "Pydantic Settings class loading env vars for LLM, Qdrant, MCP, etc."
+        "description": "Settings class loading from .env. Covers OpenRouter API keys, Qdrant paths, RAG parameters, MCP server configs, and LangSmith tracing. Exports a singleton settings instance."
       },
-      "confidence": 0.92
+      "confidence": 1
     },
     {
       "id": "f-87482e13901158e6",
       "label": "logging.py",
       "kind": "file",
-      "type": "Logging setup",
-      "parentId": "g-1800f2728c25155b",
+      "type": "Centralized logging setup",
+      "parentId": "g-598f3a114e53205e",
       "metadata": {
         "canonicalPath": "src/core/logging.py",
         "fileId": "87482e13901158e6",
         "language": "python",
-        "role": "Logging setup",
-        "importance": "peripheral",
+        "role": "Centralized logging setup",
+        "importance": "supporting",
         "isHighlighted": false
       },
       "confidence": 0.85
     },
     {
-      "id": "g-7fd1b96da31670f2",
-      "label": "Scripts & Testing",
+      "id": "f-4d7c51b1efe9043e",
+      "label": "requirements.txt",
+      "kind": "file",
+      "type": "Python dependency manifest",
+      "parentId": "g-598f3a114e53205e",
+      "metadata": {
+        "canonicalPath": "requirements.txt",
+        "fileId": "4d7c51b1efe9043e",
+        "language": "unknown",
+        "role": "Python dependency manifest",
+        "importance": "supporting",
+        "isHighlighted": false
+      },
+      "confidence": 0.85
+    },
+    {
+      "id": "f-6b39a2f1a6399aa3",
+      "label": "__init__.py",
+      "kind": "file",
+      "type": "Source root package init",
+      "parentId": "g-598f3a114e53205e",
+      "metadata": {
+        "canonicalPath": "src/__init__.py",
+        "fileId": "6b39a2f1a6399aa3",
+        "language": "python",
+        "role": "Source root package init",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.5
+    },
+    {
+      "id": "f-e8689b2924052e1b",
+      "label": "__init__.py",
+      "kind": "file",
+      "type": "Core package init",
+      "parentId": "g-598f3a114e53205e",
+      "metadata": {
+        "canonicalPath": "src/core/__init__.py",
+        "fileId": "e8689b2924052e1b",
+        "language": "python",
+        "role": "Core package init",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.5
+    },
+    {
+      "id": "g-98c7e570587f78c2",
+      "label": "CLI Scripts & Utilities",
       "kind": "group",
-      "type": "other",
+      "type": "infrastructure",
       "parentId": "root",
       "metadata": {
-        "description": "CLI scripts for data ingestion, search testing, and stream testing",
+        "description": "Command-line scripts for data pipeline operations. ingest.py loads and indexes portfolio markdown files into the vector store. similarity_search.py provides a development tool for testing vector search queries and inspecting results.",
         "fileCount": 3,
         "highlightFileCount": 1
       },
@@ -335,56 +497,400 @@
       "id": "f-169448e9bf541331",
       "label": "ingest.py",
       "kind": "file",
-      "type": "Data ingestion script",
-      "parentId": "g-7fd1b96da31670f2",
+      "type": "CLI script for ingesting portfolio documents",
+      "parentId": "g-98c7e570587f78c2",
       "metadata": {
         "canonicalPath": "scripts/ingest.py",
         "fileId": "169448e9bf541331",
         "language": "python",
-        "role": "Data ingestion script",
+        "role": "CLI script for ingesting portfolio documents",
         "importance": "supporting",
         "isHighlighted": true,
-        "description": "CLI script to ingest markdown files into the vector store"
+        "description": "Entry point that initializes RAGService and calls ingest_documents() to index markdown files into Qdrant."
       },
-      "confidence": 0.85
+      "confidence": 0.9
     },
     {
       "id": "f-b9a1e52795eca140",
       "label": "similarity_search.py",
       "kind": "file",
-      "type": "Search testing script",
-      "parentId": "g-7fd1b96da31670f2",
+      "type": "CLI script for testing similarity search",
+      "parentId": "g-98c7e570587f78c2",
       "metadata": {
         "canonicalPath": "scripts/similarity_search.py",
         "fileId": "b9a1e52795eca140",
         "language": "python",
-        "role": "Search testing script",
+        "role": "CLI script for testing similarity search",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.85
+    },
+    {
+      "id": "f-64edd7fc2be5076d",
+      "label": "__init__.py",
+      "kind": "file",
+      "type": "Scripts package init",
+      "parentId": "g-98c7e570587f78c2",
+      "metadata": {
+        "canonicalPath": "scripts/__init__.py",
+        "fileId": "64edd7fc2be5076d",
+        "language": "python",
+        "role": "Scripts package init",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.5
+    },
+    {
+      "id": "g-6450e39005641b99",
+      "label": "Test Suite",
+      "kind": "group",
+      "type": "other",
+      "parentId": "root",
+      "metadata": {
+        "description": "Unit and integration tests validating the core contracts of the system. test_agent_contracts.py verifies GitHub catalog normalization and private portfolio catalog building. test_streaming.py validates the AnswerStreamExtractor and NDJSON utilities. test_stream.py provides a manual integration test for the full graph execution pipeline.",
+        "fileCount": 3,
+        "highlightFileCount": 2
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-2289de6008eec356",
+      "label": "test_agent_contracts.py",
+      "kind": "file",
+      "type": "Unit tests for catalog services",
+      "parentId": "g-6450e39005641b99",
+      "metadata": {
+        "canonicalPath": "tests/test_agent_contracts.py",
+        "fileId": "2289de6008eec356",
+        "language": "python",
+        "role": "Unit tests for catalog services",
+        "importance": "supporting",
+        "isHighlighted": true,
+        "description": "Tests for GitHub catalog normalization and private portfolio catalog building."
+      },
+      "confidence": 0.9
+    },
+    {
+      "id": "f-d960bb61fde148c9",
+      "label": "test_streaming.py",
+      "kind": "file",
+      "type": "Unit tests for streaming utilities",
+      "parentId": "g-6450e39005641b99",
+      "metadata": {
+        "canonicalPath": "tests/test_streaming.py",
+        "fileId": "d960bb61fde148c9",
+        "language": "python",
+        "role": "Unit tests for streaming utilities",
+        "importance": "supporting",
+        "isHighlighted": true,
+        "description": "Tests for AnswerStreamExtractor, ndjson_event, and normalize_suggestions."
+      },
+      "confidence": 0.9
+    },
+    {
+      "id": "f-f09b450850479b37",
+      "label": "test_stream.py",
+      "kind": "file",
+      "type": "Integration test for streaming graph execution",
+      "parentId": "g-6450e39005641b99",
+      "metadata": {
+        "canonicalPath": "test_stream.py",
+        "fileId": "f09b450850479b37",
+        "language": "python",
+        "role": "Integration test for streaming graph execution",
         "importance": "peripheral",
         "isHighlighted": false
       },
       "confidence": 0.8
     },
     {
-      "id": "f-f09b450850479b37",
-      "label": "test_stream.py",
-      "kind": "file",
-      "type": "Stream test script",
-      "parentId": "g-7fd1b96da31670f2",
+      "id": "g-0920941c4540c34a",
+      "label": "Portfolio Data Sources",
+      "kind": "group",
+      "type": "domain",
+      "parentId": "root",
       "metadata": {
-        "canonicalPath": "test_stream.py",
-        "fileId": "f09b450850479b37",
-        "language": "python",
-        "role": "Stream test script",
+        "description": "Raw markdown files containing the portfolio owner's professional background, project descriptions, and CV. These files serve as the knowledge base for the RAG pipeline — they are ingested, chunked, and indexed into the vector store. Frontmatter metadata (project_name, company_name, visibility, tags) enables structured catalog building and category-based retrieval. Also includes the Qdrant vector database storage files.",
+        "fileCount": 10,
+        "highlightFileCount": 1
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-3bbeecde54b5602f",
+      "label": "about_me.md",
+      "kind": "file",
+      "type": "Portfolio data — personal bio and skills",
+      "parentId": "g-0920941c4540c34a",
+      "metadata": {
+        "canonicalPath": "data/raw/about_me.md",
+        "fileId": "3bbeecde54b5602f",
+        "language": "markdown",
+        "role": "Portfolio data — personal bio and skills",
+        "importance": "peripheral",
+        "isHighlighted": true,
+        "description": "Portfolio owner's professional summary and career background."
+      },
+      "confidence": 0.7
+    },
+    {
+      "id": "f-55de492c6dfc4baf",
+      "label": "closync-gateway.md",
+      "kind": "file",
+      "type": "Portfolio data — Closync Gateway project",
+      "parentId": "g-0920941c4540c34a",
+      "metadata": {
+        "canonicalPath": "data/raw/closync-gateway.md",
+        "fileId": "55de492c6dfc4baf",
+        "language": "markdown",
+        "role": "Portfolio data — Closync Gateway project",
         "importance": "peripheral",
         "isHighlighted": false
       },
-      "confidence": 0.75
+      "confidence": 0.7
+    },
+    {
+      "id": "f-07e14e2fae647dc6",
+      "label": "closync.md",
+      "kind": "file",
+      "type": "Portfolio data — Closync project",
+      "parentId": "g-0920941c4540c34a",
+      "metadata": {
+        "canonicalPath": "data/raw/closync.md",
+        "fileId": "07e14e2fae647dc6",
+        "language": "markdown",
+        "role": "Portfolio data — Closync project",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.7
+    },
+    {
+      "id": "f-4f792f802356a9b5",
+      "label": "dentalprice-virtural-pos.md",
+      "kind": "file",
+      "type": "Portfolio data — DentalPrice Virtual POS",
+      "parentId": "g-0920941c4540c34a",
+      "metadata": {
+        "canonicalPath": "data/raw/dentalprice-virtural-pos.md",
+        "fileId": "4f792f802356a9b5",
+        "language": "markdown",
+        "role": "Portfolio data — DentalPrice Virtual POS",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.7
+    },
+    {
+      "id": "f-6267a4457a20d14c",
+      "label": "dentalprice.md",
+      "kind": "file",
+      "type": "Portfolio data — DentalPrice project",
+      "parentId": "g-0920941c4540c34a",
+      "metadata": {
+        "canonicalPath": "data/raw/dentalprice.md",
+        "fileId": "6267a4457a20d14c",
+        "language": "markdown",
+        "role": "Portfolio data — DentalPrice project",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.7
+    },
+    {
+      "id": "f-dd513e1f066640bd",
+      "label": "cv.md",
+      "kind": "file",
+      "type": "Portfolio data — CV/resume",
+      "parentId": "g-0920941c4540c34a",
+      "metadata": {
+        "canonicalPath": "cv.md",
+        "fileId": "dd513e1f066640bd",
+        "language": "markdown",
+        "role": "Portfolio data — CV/resume",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.7
+    },
+    {
+      "id": "f-3213d63265cdbfdd",
+      "label": "new_cv.md",
+      "kind": "file",
+      "type": "Updated CV content",
+      "parentId": "g-0920941c4540c34a",
+      "metadata": {
+        "canonicalPath": "new_cv.md",
+        "fileId": "3213d63265cdbfdd",
+        "language": "markdown",
+        "role": "Updated CV content",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.6
+    },
+    {
+      "id": "f-61cb6d2aedda2a85",
+      "label": "new_cv copy.md",
+      "kind": "file",
+      "type": "CV backup copy",
+      "parentId": "g-0920941c4540c34a",
+      "metadata": {
+        "canonicalPath": "new_cv copy.md",
+        "fileId": "61cb6d2aedda2a85",
+        "language": "markdown",
+        "role": "CV backup copy",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.5
+    },
+    {
+      "id": "f-772111c01afee76b",
+      "label": "storage.sqlite",
+      "kind": "file",
+      "type": "Qdrant vector database storage",
+      "parentId": "g-0920941c4540c34a",
+      "metadata": {
+        "canonicalPath": "data/vector_db/collection/portfolio/storage.sqlite",
+        "fileId": "772111c01afee76b",
+        "language": "unknown",
+        "role": "Qdrant vector database storage",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.5
+    },
+    {
+      "id": "f-ba10c3fa4b7dd578",
+      "label": "meta.json",
+      "kind": "file",
+      "type": "Qdrant vector database metadata",
+      "parentId": "g-0920941c4540c34a",
+      "metadata": {
+        "canonicalPath": "data/vector_db/meta.json",
+        "fileId": "ba10c3fa4b7dd578",
+        "language": "json",
+        "role": "Qdrant vector database metadata",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.5
+    },
+    {
+      "id": "g-4e5a4c61927a12e5",
+      "label": "Documentation & Generated Artifacts",
+      "kind": "group",
+      "type": "other",
+      "parentId": "root",
+      "metadata": {
+        "description": "Project documentation including README with architecture overview and quick start guide, developer handoff guide, implementation plan, and generated mind map output files.",
+        "fileCount": 5,
+        "highlightFileCount": 1
+      },
+      "confidence": 1
+    },
+    {
+      "id": "f-b335630551682c19",
+      "label": "README.md",
+      "kind": "file",
+      "type": "Project README documentation",
+      "parentId": "g-4e5a4c61927a12e5",
+      "metadata": {
+        "canonicalPath": "README.md",
+        "fileId": "b335630551682c19",
+        "language": "markdown",
+        "role": "Project README documentation",
+        "importance": "supporting",
+        "isHighlighted": true,
+        "description": "Comprehensive README with architecture overview, quick start guide, and API docs."
+      },
+      "confidence": 0.85
+    },
+    {
+      "id": "f-e546d4bcc2a4a592",
+      "label": "agenticfolio_handoff_guide.md",
+      "kind": "file",
+      "type": "Developer handoff guide",
+      "parentId": "g-4e5a4c61927a12e5",
+      "metadata": {
+        "canonicalPath": "agenticfolio_handoff_guide.md",
+        "fileId": "e546d4bcc2a4a592",
+        "language": "markdown",
+        "role": "Developer handoff guide",
+        "importance": "supporting",
+        "isHighlighted": false
+      },
+      "confidence": 0.85
+    },
+    {
+      "id": "f-e2705a074c0c5d0d",
+      "label": "implementation_plan.md",
+      "kind": "file",
+      "type": "Implementation planning document",
+      "parentId": "g-4e5a4c61927a12e5",
+      "metadata": {
+        "canonicalPath": "implementation_plan.md",
+        "fileId": "e2705a074c0c5d0d",
+        "language": "markdown",
+        "role": "Implementation planning document",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.6
+    },
+    {
+      "id": "f-ec8915baaf5e9c2e",
+      "label": "mindmap-output.json",
+      "kind": "file",
+      "type": "Generated mind map output",
+      "parentId": "g-4e5a4c61927a12e5",
+      "metadata": {
+        "canonicalPath": "mindmap-output.json",
+        "fileId": "ec8915baaf5e9c2e",
+        "language": "json",
+        "role": "Generated mind map output",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.4
+    },
+    {
+      "id": "f-f904c5a5af80ab2d",
+      "label": "mindmap-output copy.json",
+      "kind": "file",
+      "type": "Mind map output backup copy",
+      "parentId": "g-4e5a4c61927a12e5",
+      "metadata": {
+        "canonicalPath": "mindmap-output copy.json",
+        "fileId": "f904c5a5af80ab2d",
+        "language": "json",
+        "role": "Mind map output backup copy",
+        "importance": "peripheral",
+        "isHighlighted": false
+      },
+      "confidence": 0.3
     }
   ],
   "edges": [
     {
-      "id": "e-7351c154fb89b73d",
-      "source": "f-2e5ad92c43aa96cc",
+      "id": "e-9d9bcae3a195df11",
+      "source": "f-643b7835b916d216",
+      "target": "f-ba10c3fa4b7dd578",
+      "rels": [
+        "imports"
+      ],
+      "metadata": {
+        "importedSymbols": [
+          "*"
+        ]
+      }
+    },
+    {
+      "id": "e-5bd71b75129c54df",
+      "source": "f-6bd8531d6b6599e9",
       "target": "f-ba10c3fa4b7dd578",
       "rels": [
         "imports"
@@ -422,6 +928,32 @@
       }
     },
     {
+      "id": "e-cc11160344dcbf74",
+      "source": "f-87482e13901158e6",
+      "target": "f-87482e13901158e6",
+      "rels": [
+        "imports"
+      ],
+      "metadata": {
+        "importedSymbols": [
+          "*"
+        ]
+      }
+    },
+    {
+      "id": "e-825aea0479b22443",
+      "source": "f-d960bb61fde148c9",
+      "target": "f-ba10c3fa4b7dd578",
+      "rels": [
+        "imports"
+      ],
+      "metadata": {
+        "importedSymbols": [
+          "*"
+        ]
+      }
+    },
+    {
       "id": "e-ba226c3c5b8818a0",
       "source": "f-2e5ad92c43aa96cc",
       "target": "f-164171855a11d162",
@@ -429,9 +961,9 @@
         "imports",
         "orchestrates"
       ],
-      "label": "Lifespan creates and compiles the LangGraph workflow",
+      "label": "main.py calls create_portfolio_graph() to build the agent workflow during lifespan startup",
       "metadata": {
-        "annotation": "Lifespan creates and compiles the LangGraph workflow"
+        "annotation": "main.py calls create_portfolio_graph() to build the agent workflow during lifespan startup"
       }
     },
     {
@@ -442,34 +974,9 @@
         "imports",
         "initializes"
       ],
-      "label": "Lifespan initializes RAG service and vector store",
+      "label": "main.py creates RAGService instance during lifespan and stores it in app.state",
       "metadata": {
-        "annotation": "Lifespan initializes RAG service and vector store"
-      }
-    },
-    {
-      "id": "e-97d72d3b3d828b85",
-      "source": "f-2e5ad92c43aa96cc",
-      "target": "f-2b14c7a998aaa1ab",
-      "rels": [
-        "imports",
-        "mounts"
-      ],
-      "label": "Mounts API router onto FastAPI app",
-      "metadata": {
-        "annotation": "Mounts API router onto FastAPI app"
-      }
-    },
-    {
-      "id": "e-9128a16321cc1d8c",
-      "source": "f-2e5ad92c43aa96cc",
-      "target": "f-9ae9f4dee9042360",
-      "rels": [
-        "imports"
-      ],
-      "label": "Builds search tool during lifespan",
-      "metadata": {
-        "annotation": "Builds search tool during lifespan"
+        "annotation": "main.py creates RAGService instance during lifespan and stores it in app.state"
       }
     },
     {
@@ -480,9 +987,33 @@
         "imports",
         "initializes"
       ],
-      "label": "Creates embedding service for RAG",
+      "label": "main.py creates EmbeddingService and passes it to RAGService",
       "metadata": {
-        "annotation": "Creates embedding service for RAG"
+        "annotation": "main.py creates EmbeddingService and passes it to RAGService"
+      }
+    },
+    {
+      "id": "e-9128a16321cc1d8c",
+      "source": "f-2e5ad92c43aa96cc",
+      "target": "f-9ae9f4dee9042360",
+      "rels": [
+        "imports"
+      ],
+      "label": "main.py calls build_search_tool with RAGService instance",
+      "metadata": {
+        "annotation": "main.py calls build_search_tool with RAGService instance"
+      }
+    },
+    {
+      "id": "e-1d7dbafe4c96477a",
+      "source": "f-2e5ad92c43aa96cc",
+      "target": "f-6bd8531d6b6599e9",
+      "rels": [
+        "imports"
+      ],
+      "label": "main.py uses github_catalog to normalize MCP output and build repo catalog",
+      "metadata": {
+        "annotation": "main.py uses github_catalog to normalize MCP output and build repo catalog"
       }
     },
     {
@@ -492,9 +1023,35 @@
       "rels": [
         "imports"
       ],
-      "label": "Loads private portfolio catalog at startup",
+      "label": "main.py calls load_private_portfolio_catalog for routing context",
       "metadata": {
-        "annotation": "Loads private portfolio catalog at startup"
+        "annotation": "main.py calls load_private_portfolio_catalog for routing context"
+      }
+    },
+    {
+      "id": "e-97d72d3b3d828b85",
+      "source": "f-2e5ad92c43aa96cc",
+      "target": "f-2b14c7a998aaa1ab",
+      "rels": [
+        "imports",
+        "mounts"
+      ],
+      "label": "main.py includes the API router under /api/v1 prefix",
+      "metadata": {
+        "annotation": "main.py includes the API router under /api/v1 prefix"
+      }
+    },
+    {
+      "id": "e-78e4048a6a04cb36",
+      "source": "f-2e5ad92c43aa96cc",
+      "target": "f-2e8a8cf531fb2607",
+      "rels": [
+        "imports",
+        "configures"
+      ],
+      "label": "main.py reads settings for all service initialization",
+      "metadata": {
+        "annotation": "main.py reads settings for all service initialization"
       }
     },
     {
@@ -503,11 +1060,11 @@
       "target": "f-a7b954cf052d1934",
       "rels": [
         "imports",
-        "composes"
+        "instantiates"
       ],
-      "label": "Adds AssistantNode to the graph",
+      "label": "graph.py creates AssistantNode and adds it as the entry-point node",
       "metadata": {
-        "annotation": "Adds AssistantNode to the graph"
+        "annotation": "graph.py creates AssistantNode and adds it as the entry-point node"
       }
     },
     {
@@ -516,11 +1073,11 @@
       "target": "f-0d2fa451fa03c687",
       "rels": [
         "imports",
-        "composes"
+        "instantiates"
       ],
-      "label": "Adds SpecialistNode to the graph",
+      "label": "graph.py creates SpecialistNode and adds it as a conditional target",
       "metadata": {
-        "annotation": "Adds SpecialistNode to the graph"
+        "annotation": "graph.py creates SpecialistNode and adds it as a conditional target"
       }
     },
     {
@@ -530,9 +1087,9 @@
       "rels": [
         "imports"
       ],
-      "label": "Uses GraphState as the state schema",
+      "label": "graph.py uses GraphState as the state schema for StateGraph",
       "metadata": {
-        "annotation": "Uses GraphState as the state schema"
+        "annotation": "graph.py uses GraphState as the state schema for StateGraph"
       }
     },
     {
@@ -542,21 +1099,21 @@
       "rels": [
         "imports"
       ],
-      "label": "Uses handoff_to_specialist for routing logic",
+      "label": "graph.py imports handoff_to_specialist for the assistant's tool list",
       "metadata": {
-        "annotation": "Uses handoff_to_specialist for routing logic"
+        "annotation": "graph.py imports handoff_to_specialist for the assistant's tool list"
       }
     },
     {
-      "id": "e-192e7cda3a70af89",
+      "id": "e-d49f0c698e194fc3",
       "source": "f-a7b954cf052d1934",
-      "target": "f-eb958772b708dcf6",
+      "target": "f-326ec4e374411ef0",
       "rels": [
-        "imports"
+        "extends"
       ],
-      "label": "Reads/writes GraphState",
+      "label": "AssistantNode inherits from BaseAgentNode",
       "metadata": {
-        "annotation": "Reads/writes GraphState"
+        "annotation": "AssistantNode inherits from BaseAgentNode"
       }
     },
     {
@@ -564,24 +1121,23 @@
       "source": "f-0d2fa451fa03c687",
       "target": "f-326ec4e374411ef0",
       "rels": [
-        "imports",
         "extends"
       ],
-      "label": "SpecialistNode extends BaseAgentNode",
+      "label": "SpecialistNode inherits from BaseAgentNode",
       "metadata": {
-        "annotation": "SpecialistNode extends BaseAgentNode"
+        "annotation": "SpecialistNode inherits from BaseAgentNode"
       }
     },
     {
-      "id": "e-13c50712311dd701",
-      "source": "f-0d2fa451fa03c687",
-      "target": "f-eb958772b708dcf6",
+      "id": "e-551328b13c6272e0",
+      "source": "f-326ec4e374411ef0",
+      "target": "f-26f569f80cded0b5",
       "rels": [
         "imports"
       ],
-      "label": "Reads/writes GraphState",
+      "label": "BaseAgentNode uses ChatTurnOutput for structured LLM output",
       "metadata": {
-        "annotation": "Reads/writes GraphState"
+        "annotation": "BaseAgentNode uses ChatTurnOutput for structured LLM output"
       }
     },
     {
@@ -591,9 +1147,9 @@
       "rels": [
         "imports"
       ],
-      "label": "Uses GraphState type",
+      "label": "BaseAgentNode types its process_message input as GraphState",
       "metadata": {
-        "annotation": "Uses GraphState type"
+        "annotation": "BaseAgentNode types its process_message input as GraphState"
       }
     },
     {
@@ -603,9 +1159,21 @@
       "rels": [
         "imports"
       ],
-      "label": "Uses request/response schemas",
+      "label": "routes.py uses ChatRequest/ChatResponse schemas for endpoint contracts",
       "metadata": {
-        "annotation": "Uses request/response schemas"
+        "annotation": "routes.py uses ChatRequest/ChatResponse schemas for endpoint contracts"
+      }
+    },
+    {
+      "id": "e-c5f40ae299824aac",
+      "source": "f-2b14c7a998aaa1ab",
+      "target": "f-643b7835b916d216",
+      "rels": [
+        "imports"
+      ],
+      "label": "routes.py uses AnswerStreamExtractor and ndjson utilities for streaming",
+      "metadata": {
+        "annotation": "routes.py uses AnswerStreamExtractor and ndjson utilities for streaming"
       }
     },
     {
@@ -614,11 +1182,11 @@
       "target": "f-dd2e81aa084da1e3",
       "rels": [
         "imports",
-        "uses"
+        "depends"
       ],
-      "label": "Uses EmbeddingService for vector generation",
+      "label": "RAGService uses EmbeddingService for both indexing and search",
       "metadata": {
-        "annotation": "Uses EmbeddingService for vector generation"
+        "annotation": "RAGService uses EmbeddingService for both indexing and search"
       }
     },
     {
@@ -628,9 +1196,9 @@
       "rels": [
         "imports"
       ],
-      "label": "Uses parse_frontmatter for metadata extraction",
+      "label": "RAGService uses parse_frontmatter for document metadata extraction",
       "metadata": {
-        "annotation": "Uses parse_frontmatter for metadata extraction"
+        "annotation": "RAGService uses parse_frontmatter for document metadata extraction"
       }
     },
     {
@@ -638,11 +1206,12 @@
       "source": "f-f372288e6ce86bb3",
       "target": "f-2e8a8cf531fb2607",
       "rels": [
-        "imports"
+        "imports",
+        "configures"
       ],
-      "label": "Reads Settings for Qdrant config",
+      "label": "RAGService reads chunk_size, qdrant_path from Settings",
       "metadata": {
-        "annotation": "Reads Settings for Qdrant config"
+        "annotation": "RAGService reads chunk_size, qdrant_path from Settings"
       }
     },
     {
@@ -650,11 +1219,25 @@
       "source": "f-9ae9f4dee9042360",
       "target": "f-f372288e6ce86bb3",
       "rels": [
-        "uses"
+        "imports",
+        "wraps"
       ],
-      "label": "search_portfolio tool delegates to RAGService at runtime",
+      "label": "build_search_tool wraps RAGService.similarity_search as a LangChain tool",
       "metadata": {
-        "annotation": "search_portfolio tool delegates to RAGService at runtime"
+        "annotation": "build_search_tool wraps RAGService.similarity_search as a LangChain tool"
+      }
+    },
+    {
+      "id": "e-9f384fb617823921",
+      "source": "f-dd2e81aa084da1e3",
+      "target": "f-2e8a8cf531fb2607",
+      "rels": [
+        "imports",
+        "configures"
+      ],
+      "label": "EmbeddingService reads model name and API key from Settings",
+      "metadata": {
+        "annotation": "EmbeddingService reads model name and API key from Settings"
       }
     },
     {
@@ -664,9 +1247,69 @@
       "rels": [
         "imports"
       ],
-      "label": "Script triggers RAG ingestion",
+      "label": "ingest.py creates RAGService and calls ingest_documents()",
       "metadata": {
-        "annotation": "Script triggers RAG ingestion"
+        "annotation": "ingest.py creates RAGService and calls ingest_documents()"
+      }
+    },
+    {
+      "id": "e-4f94642359fe705d",
+      "source": "f-b9a1e52795eca140",
+      "target": "f-f372288e6ce86bb3",
+      "rels": [
+        "imports"
+      ],
+      "label": "similarity_search.py uses RAGService.similarity_search for testing",
+      "metadata": {
+        "annotation": "similarity_search.py uses RAGService.similarity_search for testing"
+      }
+    },
+    {
+      "id": "e-a0f21e8f8760f2c6",
+      "source": "f-2289de6008eec356",
+      "target": "f-6bd8531d6b6599e9",
+      "rels": [
+        "tests"
+      ],
+      "label": "Tests extract_repository_items with various MCP output formats",
+      "metadata": {
+        "annotation": "Tests extract_repository_items with various MCP output formats"
+      }
+    },
+    {
+      "id": "e-888dc2bedc3da3d0",
+      "source": "f-2289de6008eec356",
+      "target": "f-725f058db66e5c13",
+      "rels": [
+        "tests"
+      ],
+      "label": "Tests load_private_portfolio_catalog with sample markdown files",
+      "metadata": {
+        "annotation": "Tests load_private_portfolio_catalog with sample markdown files"
+      }
+    },
+    {
+      "id": "e-04e5cc23a0cea1a3",
+      "source": "f-d960bb61fde148c9",
+      "target": "f-643b7835b916d216",
+      "rels": [
+        "tests"
+      ],
+      "label": "Tests AnswerStreamExtractor, ndjson_event, and normalize_suggestions",
+      "metadata": {
+        "annotation": "Tests AnswerStreamExtractor, ndjson_event, and normalize_suggestions"
+      }
+    },
+    {
+      "id": "e-5acd1c86140a054e",
+      "source": "f-f09b450850479b37",
+      "target": "f-164171855a11d162",
+      "rels": [
+        "tests"
+      ],
+      "label": "Integration test that creates and runs the portfolio graph",
+      "metadata": {
+        "annotation": "Integration test that creates and runs the portfolio graph"
       }
     }
   ]
