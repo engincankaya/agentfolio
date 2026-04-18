@@ -30,9 +30,19 @@ def build_search_tool(rag_service=None):
         formatted_results = []
         for doc, score in results:
             category = doc.metadata.get("category", "unknown")
-            filename = doc.metadata.get("filename", "?")
+            project_name = doc.metadata.get("project_name", "?")
+            company_name = doc.metadata.get("company_name", "?")
+            role = doc.metadata.get("role", "?")
+            period = doc.metadata.get("period", "?")
+            employment_type = doc.metadata.get("employment_type", "?")
+            location = doc.metadata.get("location", "?")
             formatted_results.append(
-                f"--- Category: {category} | File: {filename} ---\n{doc.page_content}"
+                (
+                    f"--- Project: {project_name} | Company: {company_name}"
+                    f" | Role: {role} | Period: {period}"
+                    f" | Employment: {employment_type} | Location: {location}"
+                    f" | Category: {category} ---\n{doc.page_content}"
+                )
             )
 
         return "\n\n".join(formatted_results)

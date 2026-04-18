@@ -107,7 +107,13 @@ def _format_assistant_context(public_repo_catalog: list[dict], private_portfolio
         for repo in public_repo_catalog
     ] or ["- No public repository catalog available."]
     private_lines = [
-        f"- project={entry['project_name']} | company={entry['company_name'] or '?'} | visibility={entry['visibility']} | {entry['summary']}"
+        (
+            f"- project={entry['project_name']} | company={entry['company_name'] or '?'}"
+            f" | role={entry.get('role') or '?'} | period={entry.get('period') or '?'}"
+            f" | employment_type={entry.get('employment_type') or '?'}"
+            f" | location={entry.get('location') or '?'}"
+            f" | visibility={entry['visibility']} | {entry['summary']}"
+        )
         for entry in private_portfolio_catalog
     ] or ["- No private portfolio catalog available."]
 

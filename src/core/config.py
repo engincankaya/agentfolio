@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     llm_model: str = "google/gemini-3.1-flash-lite-preview"
 
     # Qdrant
+    qdrant_url: str = ""
+    qdrant_api_key: str = ""
     qdrant_path: str = str(BASE_DIR / "data" / "vector_db")
     qdrant_collection: str = "portfolio"
 

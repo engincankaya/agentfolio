@@ -137,9 +137,9 @@ What the project does and why it exists.
 
 - **Be specific.** Write concrete facts: technologies, metrics, architecture decisions. The chatbot can only answer based on what you write.
 - **One project per file.** This helps the RAG pipeline find relevant chunks accurately.
+- **Use frontmatter metadata.** Put project, company, role, period, visibility, and summary fields at the top of each markdown file.
 - **Use headings.** Structured markdown with `##` headings helps chunking and retrieval quality.
 - **Skip the fluff.** Focus on what you built and how, not generic adjectives.
-- **File names matter.** The file name is used as metadata. Use descriptive names like `ecommerce-backend.md` instead of `project1.md`.
 
 ## Configuration
 
@@ -153,6 +153,10 @@ All configuration is done through environment variables. Copy `.env.example` to 
 | `GITHUB_PAT` | Yes | GitHub Personal Access Token for MCP server |
 | `GOOGLE_OAUTH_CLIENT_ID` | No | Google OAuth client ID for Calendar agent |
 | `GOOGLE_OAUTH_CLIENT_SECRET` | No | Google OAuth client secret for Calendar agent |
+| `QDRANT_URL` | No | Qdrant Cloud cluster URL. When set, remote Qdrant is used instead of local storage. |
+| `QDRANT_API_KEY` | No | Qdrant Cloud API key |
+| `QDRANT_PATH` | No | Local embedded Qdrant storage path, used only when `QDRANT_URL` is empty |
+| `QDRANT_COLLECTION` | No | Qdrant collection name (default: `portfolio`) |
 | `LANGSMITH_API_KEY` | No | LangSmith API key for tracing |
 | `LANGSMITH_TRACING` | No | Enable LangSmith tracing (`true`/`false`) |
 

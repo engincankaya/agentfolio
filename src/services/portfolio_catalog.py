@@ -57,13 +57,16 @@ def load_private_portfolio_catalog(raw_path: str) -> list[dict]:
         summary = metadata.get("summary") or summarize_text(body)
 
         entry = {
-            "project_name": metadata.get("project_name") or file_path.stem.replace("-", " ").title(),
+            "project_name": metadata.get("project_name") or "",
             "company_name": metadata.get("company_name") or metadata.get("company") or "",
+            "role": metadata.get("role") or "",
+            "period": metadata.get("period") or "",
+            "employment_type": metadata.get("employment_type") or "",
+            "location": metadata.get("location") or "",
             "visibility": metadata.get("visibility") or "private",
             "kind": metadata.get("kind") or "project",
             "tags": metadata.get("tags") or [],
             "summary": summary,
-            "filename": file_path.name,
         }
         catalog.append(entry)
 

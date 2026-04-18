@@ -17,8 +17,9 @@ def pretty_print_results(results: list) -> None:
     print(f"\nFound {len(results)} result(s)\n")
 
     for i, (doc,score) in enumerate(results, 1):
-        filename = doc.metadata.get("filename", "-")
         category = doc.metadata.get("category", "-")
+        project_name = doc.metadata.get("project_name", "-")
+        company_name = doc.metadata.get("company_name", "-")
         source = doc.metadata.get("source", "-")
         
         content = shorten(
@@ -27,7 +28,7 @@ def pretty_print_results(results: list) -> None:
             placeholder="..."
         )
 
-        print(f"[{i}] {filename}  |  {category}")
+        print(f"[{i}] {project_name}  |  {company_name}  |  {category}")
         print(f"\n[{i}] score={score:.4f}")
         print(f"    Source : {source}")
         print(f"    Content: {content}")

@@ -12,17 +12,6 @@ from src.services.embedding_service import EmbeddingService
 from src.services.portfolio_catalog import parse_frontmatter
 
 
-_CATEGORY_MAP: dict[str, str] = {
-    "about": "bio",
-    "bio": "bio",
-    "experience": "experience",
-    "project": "project",
-    "closync": "project",
-    "dental": "project",
-    "gateway": "project",
-}
-
-
 class RAGService:
     """Handles document ingestion and semantic search against the vector store."""
 
@@ -79,14 +68,12 @@ class RAGService:
 
     def _attach_metadata(self, documents: list) -> None:
         for doc in documents:
-            filename = Path(doc.metadata.get("source", "")).name
             frontmatter, body = parse_frontmatter(doc.page_content)
             if frontmatter:
                 doc.page_content = body
-            doc.metadata["filename"] = filename
-            doc.metadata["category"] = self._detect_category(filename)
             for key, value in frontmatter.items():
                 doc.metadata[key] = value
+            doc.metadata["category"] = frontmatter.get("category") or frontmatter.get("kind") or "general"
             doc.metadata.setdefault("visibility", "private")
             doc.metadata.setdefault("source_type", "portfolio")
 
@@ -102,7 +89,7 @@ class RAGService:
 
     def _index(self, chunks: list) -> None:
         embeddings = self._embedding_service.get()
-        client = QdrantClient(path=self._cfg.qdrant_path)
+        client = self._create_client()
         collection_name = self._cfg.qdrant_collection
 
         if client.collection_exists(collection_name):
@@ -122,17 +109,17 @@ class RAGService:
         logger.info(f"Indexed {len(chunks)} chunks into '{collection_name}'")
 
     def _get_vector_store(self) -> QdrantVectorStore:
-        client = QdrantClient(path=self._cfg.qdrant_path)
+        client = self._create_client()
         return QdrantVectorStore(
             client=client,
             collection_name=self._cfg.qdrant_collection,
             embedding=self._embedding_service.get(),
         )
 
-    @staticmethod
-    def _detect_category(filename: str) -> str:
-        name = filename.lower().replace(".md", "")
-        for key, category in _CATEGORY_MAP.items():
-            if key in name:
-                return category
-        return "general"
+    def _create_client(self) -> QdrantClient:
+        if self._cfg.qdrant_url:
+            return QdrantClient(
+                url=self._cfg.qdrant_url,
+                api_key=self._cfg.qdrant_api_key or None,
+            )
+        return QdrantClient(path=self._cfg.qdrant_path)
